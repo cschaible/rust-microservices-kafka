@@ -1,0 +1,13 @@
+[workspace]
+
+members = [
+    "common-db",
+    "common-error",
+    "kafka-common",
+    "kafka-connector",
+    "kafka-schema-common",
+    "kafka-schema-publisher",
+    "kafka-schema-user",
+    "kafka-topic-client",
+    "user-service"
+]

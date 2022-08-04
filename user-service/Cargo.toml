@@ -1,0 +1,52 @@
+[package]
+name = "user-service"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1.52"
+avro-rs = "0.13.0"
+axum = "0.5.0"
+axum-tracing-opentelemetry = { version = "0.2.1", features = ["jaeger"] }
+chrono = "0.4.19"
+common-db = { path = "../common-db" }
+common-error = { path = "../common-error" }
+dotenv = "0.15.0"
+futures = "0.3.21"
+itertools = "0.10.3"
+kafka-common = { path = "../kafka-common" }
+kafka-schema-common = { path = "../kafka-schema-common" }
+kafka-schema-user = { path = "../kafka-schema-user" }
+opentelemetry = { version = "0.17", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-semantic-conventions = "0.9.0"
+schema_registry_converter = { version = "2.1.0", features = ["avro"] }
+sea-orm = { version = "^0.8.0", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid" ], default-features = false }
+sea-orm-migration = { version = "^0.8.0", features =["sqlx-postgres", "runtime-tokio-rustls"] }
+sea-query = { version = "0.24.6", features = ["derive", "backend-postgres", "with-chrono", "with-uuid" ], default-features = false }
+sea-schema = { version = "^0.8.0", features = ["postgres", "discovery", "writer", "probe", "debug-print", "runtime-tokio-rustls"], default-features = false }
+serde = "1.0.136"
+serde_json = "1.0.79"
+tokio = { version = "1.17.0", features = ["full"]}
+tower = "0.4.12"
+tower-http = { version = "0.3.3", features = ["compression-full", "trace"] }
+tracing = "0.1"
+tracing-opentelemetry = "0.17"
+tracing-serde = "0.1.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
+
+[profile.release-fast]
+inherits = "release"
+debug = 1
+lto = "off"
+opt-level = 0
+strip = false
+incremental = true
+
+[profile.release]
+lto = true

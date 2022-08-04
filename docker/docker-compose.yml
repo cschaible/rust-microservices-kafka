@@ -1,0 +1,105 @@
+version: "2.1"
+services:
+  pgadmin:
+    image: dpage/pgadmin4:6.11
+    hostname: pgadmin
+    container_name: pgadmin
+    ports:
+      - "5433:5433"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@example.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+      PGADMIN_LISTEN_PORT: 5433
+    depends_on:
+      - postgresql
+  
+  postgresql:
+    image: postgres:14.4-alpine
+    hostname: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: demo
+      POSTGRES_USER: demouser
+      POSTGRES_PASSWORD: secret
+      PGPASSWORD: secret
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+  broker:
+    image: confluentinc/cp-kafka:7.2.1
+    hostname: broker
+    container_name: broker
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_HEAP_OPTS: '-Xmx256m -Xms128m'
+      KAFKA_JVM_PERFORMANCE_OPTS: '-client -XX:+UseG1GC -XX:+CMSClassUnloadingEnabled -XX:+CMSScavengeBeforeRemark -XX:+DisableExplicitGC -Djava.awt.headless=true'
+    volumes:
+      - ./update_run.sh:/tmp/update_run.sh
+    command: "bash -c 'if [ ! -f /tmp/update_run.sh ]; then echo \"ERROR: Did you forget the update_run.sh file that came with this docker-compose.yml file?\" && exit 1 ; else /tmp/update_run.sh && /etc/confluent/docker/run ; fi'"
+    mem_limit: 512m
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.2.1
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      EXTRA_ARGS: '-Xmx128m -Xms64m'
+    mem_limit: 256m
+  
+  kafdrop:
+    image: obsidiandynamics/kafdrop:3.30.0
+    hostname: kafdrop
+    container_name: kafdrop
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "9000:9000"
+    environment:
+      JVM_OPTS: "-Xms32M -Xmx256M"
+      KAFKA_BROKERCONNECT: "broker:29092"
+      SCHEMAREGISTRY_CONNECT: "http://schema-registry:8081"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+    mem_limit: 512m
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.36
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "16686:16686"
+    environment:
+      SPAN_STORAGE_TYPE: 'badger'
+      BADGER_EPHEMERAL: 'false'
+      BADGER_DIRECTORY_VALUE: '/badger/data'
+    mem_limit: 128m

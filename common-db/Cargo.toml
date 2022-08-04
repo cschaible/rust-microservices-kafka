@@ -1,0 +1,16 @@
+[package]
+name = "common-db"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = false
+
+[dependencies]
+common-error = { path = "../common-error" }
+futures = "0.3.21"
+sea-orm = { version = "^0.8.0", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid" ], default-features = false }
+tracing = "0.1"
