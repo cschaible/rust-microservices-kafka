@@ -10,20 +10,15 @@ use dotenv::dotenv;
 
 use sea_orm_migration::MigratorTrait;
 use tokio::sync::Mutex;
-use tower_http::{
-    compression::{predicate::SizeAbove, CompressionLayer},
-    trace::TraceLayer,
-};
+use tower_http::compression::{predicate::SizeAbove, CompressionLayer};
 
 use migration::Migrator;
+use tracing_common::init_tracing;
 
 use crate::event::DynEventConverter;
+use crate::{common::api::health, event::service::event_dispatcher::EventDispatcher};
 use crate::{
     common::server::shutdown_signal, event::TopicConfiguration, user::event::UserDtoEventConverter,
-};
-use crate::{
-    common::{api::health, tracing::init_tracing},
-    event::service::event_dispatcher::EventDispatcher,
 };
 use crate::{
     common::{context::ContextImpl, db::init_db_pool},
@@ -43,7 +38,13 @@ async fn main() {
     // TODO: https://github.com/mehcode/config-rs
 
     // Initialize logging and tracing
-    init_tracing();
+    init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
+        e.add_directive(
+            "sea_orm::database::transaction=info" //trace
+                .parse()
+                .unwrap_or_default(),
+        )
+    });
 
     // Initialize db connection pool
     let db = init_db_pool().await;
@@ -64,7 +65,7 @@ async fn main() {
     // Construct topic configuration
     let user_topic_configuration = TopicConfiguration {
         topic: "user".to_owned(),
-        partitions: 6,
+        partitions: 2,
     };
 
     // Construct converter
@@ -89,7 +90,6 @@ async fn main() {
     // Configure routing. Configure separate router to not trace /health calls.
     let app = Router::new()
         .register_user_endpoints()
-        .layer(TraceLayer::new_for_http())
         .route("/health", get(health))
         .layer(opentelemetry_tracing_layer())
         .layer(Extension(context))
@@ -100,7 +100,7 @@ async fn main() {
     tracing::info!("listening on {addr}");
 
     axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();

@@ -3,6 +3,7 @@ use sea_orm_migration::{MigrationTrait, MigratorTrait};
 
 mod m20220403_initial_migration;
 mod m20220703_add_event_table;
+mod m20220805_add_trace_id_to_event_table;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "seaql_migrations")]
@@ -25,6 +26,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20220403_initial_migration::Migration),
             Box::new(m20220703_add_event_table::Migration),
+            Box::new(m20220805_add_trace_id_to_event_table::Migration),
         ]
     }
 }

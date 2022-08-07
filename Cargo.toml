@@ -9,5 +9,7 @@ members = [
     "kafka-schema-publisher",
     "kafka-schema-user",
     "kafka-topic-client",
+    "opentelemetry-propagator-b3",
+    "tracing-common",
     "user-service"
 ]

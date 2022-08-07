@@ -13,6 +13,7 @@ use schema_registry_converter::{
 };
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::instrument;
 
 use crate::common::model::IsoCountryCodeEnum;
 use crate::event::service::dto::SerializableEventDto;
@@ -65,6 +66,7 @@ impl<'a> EventConverter for UserDtoEventConverter<'a> {
         SCHEMA_NAME_CREATE_USER.to_string()
     }
 
+    #[instrument(name = "user_event_converter.handle", skip_all)]
     async fn handle(
         &mut self,
         event: &Box<dyn SerializableEventDto>,
