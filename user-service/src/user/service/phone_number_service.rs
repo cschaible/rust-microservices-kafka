@@ -7,6 +7,7 @@ use sea_orm::{
     ColumnTrait, ConnectionTrait, EntityTrait, JoinType, QueryFilter, QuerySelect, RelationTrait,
     Set,
 };
+use tracing::instrument;
 use uuid::Uuid;
 
 use crate::user::model::{phone_number, phone_number::Entity as PhoneNumberEntity, user};
@@ -16,6 +17,7 @@ use super::{
     user_service,
 };
 
+#[instrument(name = "phone_number_service.save", skip_all)]
 pub async fn save<T: ConnectionTrait + Sized>(
     connection: &T,
     user_identifier: Uuid,
@@ -50,6 +52,7 @@ pub async fn save<T: ConnectionTrait + Sized>(
     Ok(())
 }
 
+#[instrument(name = "phone_number_service.find_all_by_user_identifier", skip_all)]
 pub async fn find_all_by_user_identifier<T: ConnectionTrait + Sized>(
     connection: &T,
     user_identifier: Uuid,
@@ -64,6 +67,7 @@ pub async fn find_all_by_user_identifier<T: ConnectionTrait + Sized>(
         .collect())
 }
 
+#[instrument(name = "phone_number_service.delete_all_by_user_identifier", skip_all)]
 pub async fn delete_all_by_user_identifier<T: ConnectionTrait + Sized>(
     connection: &T,
     user_identifier: Uuid,
@@ -80,6 +84,7 @@ pub async fn delete_all_by_user_identifier<T: ConnectionTrait + Sized>(
     Ok(())
 }
 
+#[instrument(name = "phone_number_service.find_all_by_user_identifiers", skip_all)]
 pub async fn find_all_by_user_identifiers<T: ConnectionTrait + Sized>(
     connection: &T,
     user_identifiers: Vec<Uuid>,

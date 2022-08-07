@@ -1,6 +1,7 @@
 use common_error::AppError;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::instrument;
 
 use crate::event::{handles, DynEventConverter};
 
@@ -11,6 +12,7 @@ pub struct EventDispatcher {
 }
 
 impl EventDispatcher {
+    #[instrument(name = "event_dispatcher.dispatch", skip_all)]
     pub async fn dispatch(
         &mut self,
         event: Box<dyn SerializableEventDto>,

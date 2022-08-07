@@ -12,7 +12,7 @@ use super::super::{model::user, model::user::Entity as UserEntity};
 
 use super::dto::{CreateUserDto, UserDto};
 
-#[instrument(name = "user.service.create_user", skip_all)]
+#[instrument(name = "user_service.create_user", skip_all)]
 pub async fn create_user(
     tx_context: &TransactionalContext,
     user: &CreateUserDto,
@@ -27,7 +27,7 @@ pub async fn create_user(
         ..Default::default()
     };
 
-    tracing::warn!("Save user with identifier: {:?}", u.identifier);
+    tracing::debug!("Save user with identifier: {:?}", u.identifier);
 
     // Save entity
     let saved_user = u.insert(tx_context.db_connection()).await?;
@@ -35,7 +35,7 @@ pub async fn create_user(
     Ok(saved_user.into())
 }
 
-#[instrument(name = "user.service.find_one_by_identifier", skip(connection))]
+#[instrument(name = "user_service.find_one_by_identifier", skip(connection))]
 pub async fn find_one_by_identifier<'a, T: ConnectionTrait + Sized>(
     connection: &T,
     identifier: Uuid,
@@ -48,7 +48,7 @@ pub async fn find_one_by_identifier<'a, T: ConnectionTrait + Sized>(
     Ok(user_with_number.first().map(|user| user.to_owned().into()))
 }
 
-#[instrument(name = "user.service.find_all", skip_all)]
+#[instrument(name = "user_service.find_all", skip_all)]
 pub async fn find_all<T: ConnectionTrait + Sized>(connection: &T) -> Result<Vec<UserDto>> {
     Ok(UserEntity::find()
         .order_by_asc(user::Column::Identifier)
@@ -59,7 +59,7 @@ pub async fn find_all<T: ConnectionTrait + Sized>(connection: &T) -> Result<Vec<
         .collect())
 }
 
-#[instrument(name = "user.service.find_all_paged", skip(connection))]
+#[instrument(name = "user_service.find_all_paged", skip(connection))]
 pub async fn find_all_paged<T: ConnectionTrait + Sized>(
     connection: &T,
     page_params: PageParams,
@@ -92,7 +92,7 @@ pub async fn find_all_paged<T: ConnectionTrait + Sized>(
     })
 }
 
-#[instrument(name = "user.service.find_all_by_identifiers", skip(connection))]
+#[instrument(name = "user_service.find_all_by_identifiers", skip(connection))]
 pub async fn find_all_by_identifiers<T: ConnectionTrait + Sized>(
     connection: &T,
     user_identifiers: Vec<Uuid>,

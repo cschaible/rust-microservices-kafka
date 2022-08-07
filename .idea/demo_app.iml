@@ -13,6 +13,8 @@
       <sourceFolder url="file://$MODULE_DIR$/user-service/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/kafka-connector/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/kafka-topic-client/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/opentelemetry-propagator-b3/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/tracing-common/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
