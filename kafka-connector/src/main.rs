@@ -1,24 +1,20 @@
-use axum::{routing::get, Router};
-
-use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use axum::routing::get;
+use axum::Router;
+use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use dotenv::dotenv;
-
-use opentelemetry_propagator_b3::propagator::{B3Encoding, Propagator};
-
+use opentelemetry_propagator_b3::propagator::B3Encoding;
+use opentelemetry_propagator_b3::propagator::Propagator;
 use tracing::info;
 use tracing_common::init_tracing;
 
-use crate::common::server::shutdown_signal;
-
 use crate::common::api::health;
-
 use crate::common::db::init_db_pool;
 use crate::common::kafka::init_producer;
+use crate::common::server::shutdown_signal;
 use crate::event::service::event_service;
-
 use crate::schedule::run_scheduled_job;
 
 pub mod common;
@@ -33,7 +29,7 @@ async fn main() {
 
     // Initialize logging and tracing
     init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
-        //e.add_directive("kafka_connector=trace".parse().unwrap_or_default())
+        // e.add_directive("kafka_connector=trace".parse().unwrap_or_default())
         e.add_directive("kafka_connector::event=trace".parse().unwrap_or_default())
     });
 

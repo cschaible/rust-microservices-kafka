@@ -1,10 +1,13 @@
-use crate::event_service;
+use std::sync::Arc;
+
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
 use sea_orm::DatabaseConnection;
-use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, error};
+use tracing::debug;
+use tracing::error;
+
+use crate::event_service;
 
 pub async fn poll_and_send(
     job_synchronization_mutex: Arc<Mutex<bool>>,

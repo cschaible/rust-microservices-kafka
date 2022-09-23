@@ -1,4 +1,5 @@
-use schema_registry_converter::async_impl::{avro::AvroEncoder, schema_registry::SrSettings};
+use schema_registry_converter::async_impl::avro::AvroEncoder;
+use schema_registry_converter::async_impl::schema_registry::SrSettings;
 
 pub fn resolve_sr_settings() -> SrSettings {
     let schema_registry_url = std::env::var("KAFKA_SCHEMA_REGISTRY_URL")

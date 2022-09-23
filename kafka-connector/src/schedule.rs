@@ -1,11 +1,14 @@
-use crate::job;
+use std::sync::Arc;
+use std::time::Duration;
+
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
 use sea_orm::DatabaseConnection;
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::Mutex;
-use tokio_cron_scheduler::{Job, JobScheduler};
+use tokio_cron_scheduler::Job;
+use tokio_cron_scheduler::JobScheduler;
+
+use crate::job;
 
 pub fn run_scheduled_job(
     connection: Arc<DatabaseConnection>,

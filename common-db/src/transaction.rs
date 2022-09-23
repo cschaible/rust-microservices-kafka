@@ -2,7 +2,8 @@ use std::pin::Pin;
 
 use common_error::AppError;
 use futures::Future;
-use sea_orm::{DatabaseTransaction, TransactionTrait};
+use sea_orm::DatabaseTransaction;
+use sea_orm::TransactionTrait;
 use tracing::instrument;
 
 use crate::connection::DbConnectionPool;

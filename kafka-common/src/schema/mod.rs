@@ -1,6 +1,8 @@
-use avro_rs::{Schema, Writer};
+use avro_rs::Schema;
+use avro_rs::Writer;
 use schema_registry_converter::avro_common::DecodeResult;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 
 pub fn deserialize<'a, T: Deserialize<'a>>(
     decode_result: &'a DecodeResult,

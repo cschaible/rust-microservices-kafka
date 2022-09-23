@@ -1,22 +1,22 @@
-use opentelemetry::Context;
 use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
-use opentelemetry::sdk::{trace, Resource};
-
+use opentelemetry::sdk::trace;
+use opentelemetry::sdk::Resource;
+use opentelemetry::Context;
+use opentelemetry_propagator_b3::propagator::B3Encoding;
+use opentelemetry_propagator_b3::propagator::Propagator;
 use opentelemetry_propagator_b3::propagator::B3_SINGLE_HEADER;
-use opentelemetry_propagator_b3::propagator::{B3Encoding, Propagator};
-use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, EnvFilter};
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+use tracing_subscriber::EnvFilter;
 
 /// Initializes tracing.
 ///
 /// Can be called as follows:  
 /// init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 pub fn init_tracing<T>(package_name: &str, package_version: &str, env_filter_customizer: T)
-where
-    T: Fn(EnvFilter) -> EnvFilter,
-{
+where T: Fn(EnvFilter) -> EnvFilter {
     env::set_var(
         "RUST_LOG",
         env::var("RUST_LOG").unwrap_or_else(|_| "warn".to_string()),
@@ -28,7 +28,7 @@ where
     );
 
     opentelemetry::global::set_text_map_propagator(
-        //opentelemetry::sdk::propagation::TraceContextPropagator::new(),
+        // opentelemetry::sdk::propagation::TraceContextPropagator::new(),
         Propagator::with_encoding(B3Encoding::SingleHeader),
     );
 
@@ -83,7 +83,8 @@ impl B3SpanExt for tracing::Span {
 }
 
 pub fn get_b3_trace_id() -> Option<String> {
-    // Code partially taken from axum_tracing_opentelemetry::find_current_trace_id();
+    // Code partially taken from
+    // axum_tracing_opentelemetry::find_current_trace_id();
     use opentelemetry::trace::TraceContextExt;
     use tracing_opentelemetry::OpenTelemetrySpanExt;
     let context = tracing::Span::current().context();

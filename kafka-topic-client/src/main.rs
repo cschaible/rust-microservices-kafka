@@ -3,9 +3,11 @@ extern crate core;
 use std::vec;
 
 use clap::Parser;
-use rdkafka::admin::{AdminClient, AdminOptions, NewTopic, TopicReplication};
+use rdkafka::admin::AdminClient;
+use rdkafka::admin::AdminOptions;
+use rdkafka::admin::NewTopic;
+use rdkafka::admin::TopicReplication;
 use rdkafka::client::DefaultClientContext;
-
 use rdkafka::ClientConfig;
 use tracing::warn;
 

@@ -1,9 +1,11 @@
-use axum::{
-    routing::{get, post},
-    Router,
-};
+use axum::routing::get;
+use axum::routing::post;
+use axum::Router;
 
-use super::{create_user, find_all, find_all_by_identifiers, find_one_by_identifier};
+use super::create_user;
+use super::find_all;
+use super::find_all_by_identifiers;
+use super::find_one_by_identifier;
 
 pub trait UserRouteExt {
     fn register_user_endpoints(&mut self) -> Self;

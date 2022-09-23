@@ -1,21 +1,26 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
-use common_error::{AppError, DbError};
+use common_error::AppError;
+use common_error::DbError;
 use itertools::Itertools;
-use sea_orm::{
-    ColumnTrait, ConnectionTrait, EntityTrait, JoinType, QueryFilter, QuerySelect, RelationTrait,
-    Set,
-};
+use sea_orm::ColumnTrait;
+use sea_orm::ConnectionTrait;
+use sea_orm::EntityTrait;
+use sea_orm::JoinType;
+use sea_orm::QueryFilter;
+use sea_orm::QuerySelect;
+use sea_orm::RelationTrait;
+use sea_orm::Set;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::user::model::{phone_number, phone_number::Entity as PhoneNumberEntity, user};
-
-use super::{
-    dto::{CreatePhoneNumberDto, PhoneNumberDto},
-    user_service,
-};
+use super::dto::CreatePhoneNumberDto;
+use super::dto::PhoneNumberDto;
+use super::user_service;
+use crate::user::model::phone_number;
+use crate::user::model::phone_number::Entity as PhoneNumberEntity;
+use crate::user::model::user;
 
 #[instrument(name = "phone_number_service.save", skip_all)]
 pub async fn save<T: ConnectionTrait + Sized>(

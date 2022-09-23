@@ -1,5 +1,8 @@
-use crate::{IsoCountryCodeEnumAvro, PhoneNumberAvro};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
+
+use crate::IsoCountryCodeEnumAvro;
+use crate::PhoneNumberAvro;
 
 pub const SCHEMA_NAME_CREATE_USER: &str = "CreateUserAvroV1";
 

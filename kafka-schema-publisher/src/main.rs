@@ -1,13 +1,16 @@
 use std::vec;
 
 use clap::Parser;
-use kafka_schema_common::schema_key::{RAW_SCHEMA_KEY, SCHEMA_NAME_KEY};
-use kafka_schema_user::schema_create_user::{RAW_SCHEMA_CREATE_USER_V1, SCHEMA_NAME_CREATE_USER};
-use schema_registry_converter::{
-    blocking::schema_registry::{post_schema, SrSettings},
-    error::SRCError,
-    schema_registry_common::{RegisteredSchema, SchemaType, SuppliedSchema},
-};
+use kafka_schema_common::schema_key::RAW_SCHEMA_KEY;
+use kafka_schema_common::schema_key::SCHEMA_NAME_KEY;
+use kafka_schema_user::schema_create_user::RAW_SCHEMA_CREATE_USER_V1;
+use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
+use schema_registry_converter::blocking::schema_registry::post_schema;
+use schema_registry_converter::blocking::schema_registry::SrSettings;
+use schema_registry_converter::error::SRCError;
+use schema_registry_converter::schema_registry_common::RegisteredSchema;
+use schema_registry_converter::schema_registry_common::SchemaType;
+use schema_registry_converter::schema_registry_common::SuppliedSchema;
 use tracing::error;
 
 #[derive(Parser, Debug)]

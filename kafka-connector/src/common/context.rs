@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use common_error::AppError;
-use sea_orm::{DatabaseConnection, DatabaseTransaction, TransactionTrait};
+use sea_orm::DatabaseConnection;
+use sea_orm::DatabaseTransaction;
+use sea_orm::TransactionTrait;
 
 pub type DynContext = Arc<dyn Context>;
 

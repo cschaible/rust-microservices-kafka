@@ -11,19 +11,27 @@
 //!    X-B3-Sampled: {sampling_state}
 //!    X-B3-Flags: {debug_flag}
 //!
-//! If `inject_encoding` is set to `B3Encoding::SingleHeader` then `b3` header is used to inject
-//! and extract. Otherwise, separate headers are used to inject and extract.
-use opentelemetry::{
-    propagation::{text_map_propagator::FieldIter, Extractor, Injector, TextMapPropagator},
-    trace::{SpanContext, SpanId, TraceContextExt, TraceFlags, TraceId, TraceState},
-    Context,
-};
+//! If `inject_encoding` is set to `B3Encoding::SingleHeader` then `b3` header
+//! is used to inject and extract. Otherwise, separate headers are used to
+//! inject and extract.
+use opentelemetry::propagation::text_map_propagator::FieldIter;
+use opentelemetry::propagation::Extractor;
+use opentelemetry::propagation::Injector;
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry::trace::SpanContext;
+use opentelemetry::trace::SpanId;
+use opentelemetry::trace::TraceContextExt;
+use opentelemetry::trace::TraceFlags;
+use opentelemetry::trace::TraceId;
+use opentelemetry::trace::TraceState;
+use opentelemetry::Context;
 
 pub const B3_SINGLE_HEADER: &str = "b3";
-/// As per spec, the multiple header should be case sensitive. But different protocol will use
-/// different formats. For example, HTTP will use X-B3-$name while gRPC will use x-b3-$name. So here
-/// we leave it to be lower case since we cannot tell what kind of protocol will be used.
-/// Go implementation also uses lower case.
+/// As per spec, the multiple header should be case sensitive. But different
+/// protocol will use different formats. For example, HTTP will use X-B3-$name
+/// while gRPC will use x-b3-$name. So here we leave it to be lower case since
+/// we cannot tell what kind of protocol will be used. Go implementation also
+/// uses lower case.
 pub const B3_DEBUG_FLAG_HEADER: &str = "x-b3-flags";
 pub const B3_TRACE_ID_HEADER: &str = "x-b3-traceid";
 pub const B3_SPAN_ID_HEADER: &str = "x-b3-spanid";
@@ -50,9 +58,10 @@ pub enum B3Encoding {
     /// SingleHeader is B3 encoding that uses a single header named `b3`
     /// to transmit tracing information
     SingleHeader = 2,
-    /// SingleAndMultiHeader is B3 encoding that uses both single header and multiple headers
-    /// to transmit tracing information. Note that if both single header and multiple headers are
-    /// provided, the single header will take precedence when extracted
+    /// SingleAndMultiHeader is B3 encoding that uses both single header and
+    /// multiple headers to transmit tracing information. Note that if both
+    /// single header and multiple headers are provided, the single header
+    /// will take precedence when extracted
     SingleAndMultiHeader = 3,
 }
 
@@ -63,7 +72,8 @@ impl B3Encoding {
     }
 }
 
-/// Extracts and injects `SpanContext`s into `Extractor`s or `Injector`s using B3 header format.
+/// Extracts and injects `SpanContext`s into `Extractor`s or `Injector`s using
+/// B3 header format.
 #[derive(Clone, Debug)]
 pub struct Propagator {
     inject_encoding: B3Encoding,
@@ -113,8 +123,8 @@ impl Propagator {
     }
 
     /// Extract sampled state from encoded &str value
-    /// For legacy support and  being lenient to other tracing implementations we
-    /// allow "true" and "false" as inputs for interop purposes.
+    /// For legacy support and  being lenient to other tracing implementations
+    /// we allow "true" and "false" as inputs for interop purposes.
     #[allow(clippy::result_unit_err)]
     pub fn extract_sampled_state(&self, sampled: &str) -> Result<TraceFlags, ()> {
         match sampled {
@@ -271,9 +281,9 @@ impl TextMapPropagator for Propagator {
         }
     }
 
-    /// Retrieves encoded data using the provided `Extractor`. If no data for this
-    /// format was retrieved OR if the retrieved data is invalid, then the current
-    /// `Context` is returned.
+    /// Retrieves encoded data using the provided `Extractor`. If no data for
+    /// this format was retrieved OR if the retrieved data is invalid, then
+    /// the current `Context` is returned.
     fn extract_with_context(&self, cx: &Context, extractor: &dyn Extractor) -> Context {
         let extract_result = self.extract_single_header(extractor).or_else(|_| {
             // if invalid single header should fallback to multiple
@@ -307,13 +317,16 @@ impl TextMapPropagator for Propagator {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use opentelemetry::{
-        propagation::TextMapPropagator,
-        testing::trace::TestSpan,
-        trace::{SpanContext, SpanId, TraceFlags, TraceId},
-    };
     use std::collections::HashMap;
+
+    use opentelemetry::propagation::TextMapPropagator;
+    use opentelemetry::testing::trace::TestSpan;
+    use opentelemetry::trace::SpanContext;
+    use opentelemetry::trace::SpanId;
+    use opentelemetry::trace::TraceFlags;
+    use opentelemetry::trace::TraceId;
+
+    use super::*;
 
     const TRACE_ID_STR: &str = "4bf92f3577b34da6a3ce929d0e0e4736";
     const SPAN_ID_STR: &str = "00f067aa0ba902b7";
