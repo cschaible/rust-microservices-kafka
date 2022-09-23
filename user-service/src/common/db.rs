@@ -1,13 +1,22 @@
-use std::{env::VarError, fmt::Debug, pin::Pin, str::FromStr, time::Duration};
+use std::env::VarError;
+use std::fmt::Debug;
+use std::pin::Pin;
+use std::str::FromStr;
+use std::time::Duration;
 
 use common_error::AppError;
 use futures::Future;
-use sea_orm::{
-    ConnectOptions, Database, DatabaseConnection, DatabaseTransaction, TransactionTrait,
-};
+use sea_orm::ConnectOptions;
+use sea_orm::Database;
+use sea_orm::DatabaseConnection;
+use sea_orm::DatabaseTransaction;
+use sea_orm::TransactionTrait;
 use tracing::instrument;
 
-use super::context::{commit_context, rollback_context, DynContext, TransactionalContext};
+use super::context::commit_context;
+use super::context::rollback_context;
+use super::context::DynContext;
+use super::context::TransactionalContext;
 
 pub async fn init_db_pool() -> DatabaseConnection {
     let url = std::env::var("DATABASE_URL").expect("Environment variable 'DATABASE_URL' not set");

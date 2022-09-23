@@ -1,38 +1,32 @@
-use common_error::{AppError, DbError};
+use axum::extract::Extension;
+use axum::extract::Path;
+use axum::extract::Query;
+use axum::Json;
+use common_error::AppError;
+use common_error::DbError;
 use futures::FutureExt;
-
-use axum::{
-    extract::{Extension, Path, Query},
-    Json,
-};
-
 use tracing::instrument;
 use uuid::Uuid;
 
+use self::resources::response::build_user_resource;
+use self::resources::response::build_user_resource_page_from_page;
+use self::resources::response::build_user_resource_page_from_vec;
+use self::resources::response::build_user_resources;
+use super::service::dto::CreatePhoneNumberDto;
+use super::service::dto::UserWithPhoneNumbersDto;
+use super::service::phone_number_service;
+use crate::common::context::DynContext;
 use crate::common::context::TransactionalContext;
+use crate::common::db::transactional;
+use crate::common::db::transactional2;
+use crate::common::paging::Page;
+use crate::common::paging::PageParams;
 use crate::event::service::dto::SerializableEventDto;
+use crate::event::service::event_service;
 use crate::user::api::resources::request::create_user_resource::CreateUserResource;
 use crate::user::api::resources::response::user_resource::UserResource;
 use crate::user::service::dto::CreateUserDto;
 use crate::user::service::user_service;
-use crate::{
-    common::{
-        context::DynContext,
-        db::{transactional, transactional2},
-        paging::{Page, PageParams},
-    },
-    event::service::event_service,
-};
-
-use self::resources::response::{
-    build_user_resource, build_user_resource_page_from_page, build_user_resource_page_from_vec,
-    build_user_resources,
-};
-
-use super::service::{
-    dto::{CreatePhoneNumberDto, UserWithPhoneNumbersDto},
-    phone_number_service,
-};
 
 pub mod resources;
 pub mod routing;

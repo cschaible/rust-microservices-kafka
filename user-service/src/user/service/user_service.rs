@@ -1,16 +1,18 @@
 use anyhow::Result;
-
 use common_error::AppError;
 use sea_orm::entity::prelude::*;
-use sea_orm::{ConnectionTrait, QueryOrder, Set};
+use sea_orm::ConnectionTrait;
+use sea_orm::QueryOrder;
+use sea_orm::Set;
 use tracing::instrument;
 
+use super::super::model::user;
+use super::super::model::user::Entity as UserEntity;
+use super::dto::CreateUserDto;
+use super::dto::UserDto;
 use crate::common::context::TransactionalContext;
-use crate::common::paging::{Page, PageParams};
-
-use super::super::{model::user, model::user::Entity as UserEntity};
-
-use super::dto::{CreateUserDto, UserDto};
+use crate::common::paging::Page;
+use crate::common::paging::PageParams;
 
 #[instrument(name = "user_service.create_user", skip_all)]
 pub async fn create_user(

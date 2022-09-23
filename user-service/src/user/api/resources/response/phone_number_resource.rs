@@ -1,6 +1,7 @@
 use serde::Serialize;
 
-use crate::user::{model::phone_number::PhoneNumberTypeEnum, service::dto::PhoneNumberDto};
+use crate::user::model::phone_number::PhoneNumberTypeEnum;
+use crate::user::service::dto::PhoneNumberDto;
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]

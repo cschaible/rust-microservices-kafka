@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use common_error::AppError;
 
-use self::service::dto::{EventDto, SerializableEventDto};
+use self::service::dto::EventDto;
+use self::service::dto::SerializableEventDto;
 
 pub mod model;
 pub mod service;

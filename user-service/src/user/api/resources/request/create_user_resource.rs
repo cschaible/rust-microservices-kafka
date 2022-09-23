@@ -1,11 +1,9 @@
 use serde::Deserialize;
 
-use crate::{
-    common::model::IsoCountryCodeEnum,
-    user::service::dto::{CreatePhoneNumberDto, CreateUserDto},
-};
-
 use super::create_phone_number_resource::CreatePhoneNumberResource;
+use crate::common::model::IsoCountryCodeEnum;
+use crate::user::service::dto::CreatePhoneNumberDto;
+use crate::user::service::dto::CreateUserDto;
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]

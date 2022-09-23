@@ -1,11 +1,13 @@
-use common_error::AppError;
 use std::sync::Arc;
+
+use common_error::AppError;
 use tokio::sync::Mutex;
 use tracing::instrument;
 
-use crate::event::{handles, DynEventConverter};
-
-use super::dto::{EventDto, SerializableEventDto};
+use super::dto::EventDto;
+use super::dto::SerializableEventDto;
+use crate::event::handles;
+use crate::event::DynEventConverter;
 
 pub struct EventDispatcher {
     pub(crate) event_converters: Vec<Arc<Mutex<DynEventConverter>>>,

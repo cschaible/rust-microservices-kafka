@@ -1,27 +1,30 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use common_error::AppError;
 use kafka_common::partition_of;
-use kafka_schema_common::schema_key::{KeyAvro, SCHEMA_NAME_KEY};
+use kafka_schema_common::schema_key::KeyAvro;
+use kafka_schema_common::schema_key::SCHEMA_NAME_KEY;
 use kafka_schema_common::IdentifierAvro;
-use kafka_schema_user::{
-    schema_create_user::{CreateUserAvro, SCHEMA_NAME_CREATE_USER},
-    PhoneNumberAvro, DATA_TYPE_USER,
-};
-use kafka_schema_user::{IsoCountryCodeEnumAvro, PhoneNumberTypeEnumAvro};
-use schema_registry_converter::{
-    async_impl::avro::AvroEncoder, schema_registry_common::SubjectNameStrategy,
-};
-use std::sync::Arc;
+use kafka_schema_user::schema_create_user::CreateUserAvro;
+use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
+use kafka_schema_user::IsoCountryCodeEnumAvro;
+use kafka_schema_user::PhoneNumberAvro;
+use kafka_schema_user::PhoneNumberTypeEnumAvro;
+use kafka_schema_user::DATA_TYPE_USER;
+use schema_registry_converter::async_impl::avro::AvroEncoder;
+use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
 use tokio::sync::Mutex;
 use tracing::instrument;
 
-use crate::common::model::IsoCountryCodeEnum;
-use crate::event::service::dto::SerializableEventDto;
-use crate::event::TopicConfiguration;
-use crate::event::{service::dto::EventDto, EventConverter};
-
 use super::model::phone_number::PhoneNumberTypeEnum;
-use super::service::dto::{PhoneNumberDto, UserWithPhoneNumbersDto};
+use super::service::dto::PhoneNumberDto;
+use super::service::dto::UserWithPhoneNumbersDto;
+use crate::common::model::IsoCountryCodeEnum;
+use crate::event::service::dto::EventDto;
+use crate::event::service::dto::SerializableEventDto;
+use crate::event::EventConverter;
+use crate::event::TopicConfiguration;
 
 impl From<PhoneNumberDto> for PhoneNumberAvro {
     fn from(dto: PhoneNumberDto) -> Self {

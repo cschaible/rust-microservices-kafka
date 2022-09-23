@@ -1,25 +1,33 @@
-use anyhow::Result;
-use rdkafka::message::OwnedHeaders;
-use rdkafka::producer::future_producer::OwnedDeliveryResult;
-use rdkafka::producer::{FutureProducer, FutureRecord, Producer};
-use rdkafka::util::Timeout;
 use std::sync::Arc;
 use std::time::Duration;
 
-use sea_orm::{
-    ColumnTrait, ConnectionTrait, DeleteResult, EntityTrait, PaginatorTrait, QueryFilter,
-    QueryOrder,
-};
-
-use crate::common::db::MAX_PAGE_SIZE;
+use anyhow::Result;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use opentelemetry_propagator_b3::propagator::B3_SINGLE_HEADER;
+use rdkafka::message::OwnedHeaders;
+use rdkafka::producer::future_producer::OwnedDeliveryResult;
+use rdkafka::producer::FutureProducer;
+use rdkafka::producer::FutureRecord;
+use rdkafka::producer::Producer;
+use rdkafka::util::Timeout;
+use sea_orm::ColumnTrait;
+use sea_orm::ConnectionTrait;
+use sea_orm::DeleteResult;
+use sea_orm::EntityTrait;
+use sea_orm::PaginatorTrait;
+use sea_orm::QueryFilter;
+use sea_orm::QueryOrder;
+use tracing::info;
+use tracing::instrument;
 use tracing::instrument::Instrumented;
-use tracing::{info, span, Level};
-use tracing::{instrument, Instrument};
+use tracing::span;
+use tracing::Instrument;
+use tracing::Level;
 use tracing_common::B3SpanExt;
 
-use super::super::{model::event, model::event::Entity as EventEntity};
+use super::super::model::event;
+use super::super::model::event::Entity as EventEntity;
+use crate::common::db::MAX_PAGE_SIZE;
 
 pub async fn poll_and_send<T: ConnectionTrait + Sized>() {}
 
@@ -126,9 +134,9 @@ pub async fn send_to_kafka(
             .expect("Commit of kafka transaction failed");
 
         info!("Sent {} events", number_of_events);
-    } /*else {
-          debug!("Nothing to send");
-      }*/
+    } // else {
+      // debug!("Nothing to send");
+      // }
 }
 
 pub struct EventList {

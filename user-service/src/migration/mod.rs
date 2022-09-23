@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
-use sea_orm_migration::{MigrationTrait, MigratorTrait};
+use sea_orm_migration::MigrationTrait;
+use sea_orm_migration::MigratorTrait;
 
 mod m20220403_initial_migration;
 mod m20220703_add_event_table;

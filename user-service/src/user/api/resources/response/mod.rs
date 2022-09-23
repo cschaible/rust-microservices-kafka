@@ -1,16 +1,11 @@
 use anyhow::Result;
-
 use sea_orm::ConnectionTrait;
 
-use crate::{
-    common::paging::Page,
-    user::service::{
-        dto::{PhoneNumberDto, UserDto},
-        phone_number_service,
-    },
-};
-
 use self::user_resource::UserResource;
+use crate::common::paging::Page;
+use crate::user::service::dto::PhoneNumberDto;
+use crate::user::service::dto::UserDto;
+use crate::user::service::phone_number_service;
 
 pub mod phone_number_resource;
 pub mod user_resource;

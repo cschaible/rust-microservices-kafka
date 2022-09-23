@@ -1,29 +1,30 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::net::SocketAddr;
+use std::sync::Arc;
 
-use axum::{extract::Extension, routing::get, Router};
+use axum::extract::Extension;
+use axum::routing::get;
+use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
-use common::{
-    context::DynContext,
-    kafka::{get_avro_encoder, resolve_sr_settings},
-};
+use common::context::DynContext;
+use common::kafka::get_avro_encoder;
+use common::kafka::resolve_sr_settings;
 use dotenv::dotenv;
-
+use migration::Migrator;
 use sea_orm_migration::MigratorTrait;
 use tokio::sync::Mutex;
-use tower_http::compression::{predicate::SizeAbove, CompressionLayer};
-
-use migration::Migrator;
+use tower_http::compression::predicate::SizeAbove;
+use tower_http::compression::CompressionLayer;
 use tracing_common::init_tracing;
 
+use crate::common::api::health;
+use crate::common::context::ContextImpl;
+use crate::common::db::init_db_pool;
+use crate::common::server::shutdown_signal;
+use crate::event::service::event_dispatcher::EventDispatcher;
 use crate::event::DynEventConverter;
-use crate::{common::api::health, event::service::event_dispatcher::EventDispatcher};
-use crate::{
-    common::server::shutdown_signal, event::TopicConfiguration, user::event::UserDtoEventConverter,
-};
-use crate::{
-    common::{context::ContextImpl, db::init_db_pool},
-    user::api::routing::UserRouteExt,
-};
+use crate::event::TopicConfiguration;
+use crate::user::api::routing::UserRouteExt;
+use crate::user::event::UserDtoEventConverter;
 
 mod common;
 mod event;
@@ -40,7 +41,7 @@ async fn main() {
     // Initialize logging and tracing
     init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
         e.add_directive(
-            "sea_orm::database::transaction=info" //trace
+            "sea_orm::database::transaction=info" // trace
                 .parse()
                 .unwrap_or_default(),
         )

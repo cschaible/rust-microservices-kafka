@@ -1,16 +1,14 @@
+use std::any::Any;
+
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
 use serde::Serialize;
-use std::any::Any;
 use uuid::Uuid;
 
-use crate::{
-    common::model::IsoCountryCodeEnum,
-    event::service::dto::SerializableEventDto,
-    user::model::{
-        phone_number::{self, PhoneNumberTypeEnum},
-        user,
-    },
-};
+use crate::common::model::IsoCountryCodeEnum;
+use crate::event::service::dto::SerializableEventDto;
+use crate::user::model::phone_number::PhoneNumberTypeEnum;
+use crate::user::model::phone_number::{self,};
+use crate::user::model::user;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CreateUserDto {

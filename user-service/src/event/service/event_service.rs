@@ -1,11 +1,12 @@
 use common_error::AppError;
-use sea_orm::{ActiveModelTrait, Set};
+use sea_orm::ActiveModelTrait;
+use sea_orm::Set;
 use tracing::instrument;
 use tracing_common::get_b3_trace_id;
 
-use crate::{common::context::TransactionalContext, event::model::event};
-
 use super::dto::EventDto;
+use crate::common::context::TransactionalContext;
+use crate::event::model::event;
 
 #[instrument(name = "event.service.save", skip_all)]
 pub async fn save(tx_context: &TransactionalContext, event: &EventDto) -> Result<(), AppError> {
