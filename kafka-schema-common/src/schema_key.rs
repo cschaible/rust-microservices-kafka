@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::IdentifierAvro;
 
-pub const SCHEMA_NAME_KEY: &str = "key";
+pub const SCHEMA_NAME_KEY: &str = "KeyAvro";
 
 pub const RAW_SCHEMA_KEY: &str = r#"
     {
