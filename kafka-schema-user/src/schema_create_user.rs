@@ -1,11 +1,11 @@
 use crate::{IsoCountryCodeEnumAvro, PhoneNumberAvro};
 use serde::{Deserialize, Serialize};
 
-pub const SCHEMA_NAME_CREATE_USER: &str = "create_user";
+pub const SCHEMA_NAME_CREATE_USER: &str = "CreateUserAvroV1";
 
 pub const RAW_SCHEMA_CREATE_USER_V1: &str = r#"
     {
-        "name": "user",
+        "name": "CreateUserAvroV1",
         "type": "record",
         "fields": [
             {
