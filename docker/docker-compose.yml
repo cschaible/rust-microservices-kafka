@@ -110,6 +110,7 @@ services:
       };
       rs.initiate(config);
       '
+    mem_limit: 256m
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.2.1
@@ -157,8 +158,8 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-      EXTRA_ARGS: '-Xmx128m -Xms64m'
-    mem_limit: 256m
+      EXTRA_ARGS: '-Xmx256m -Xms64m'
+    mem_limit: 512m
   
   kafdrop:
     image: obsidiandynamics/kafdrop:3.30.0
@@ -188,4 +189,4 @@ services:
       SPAN_STORAGE_TYPE: 'badger'
       BADGER_EPHEMERAL: 'false'
       BADGER_DIRECTORY_VALUE: '/badger/data'
-    mem_limit: 128m
+    mem_limit: 256m
