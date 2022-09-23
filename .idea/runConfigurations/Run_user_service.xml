@@ -2,7 +2,7 @@
   <configuration default="false" name="Run user-service" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run --package user-service --bin user-service" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/user-service" />
-    <option name="channel" value="DEFAULT" />
+    <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />
     <option name="emulateTerminal" value="false" />

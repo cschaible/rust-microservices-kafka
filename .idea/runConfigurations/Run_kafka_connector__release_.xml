@@ -2,7 +2,7 @@
   <configuration default="false" name="Run kafka-connector (release)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="command" value="run --package kafka-connector --bin kafka-connector --release" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-connector" />
-    <option name="channel" value="DEFAULT" />
+    <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />
     <option name="emulateTerminal" value="false" />
