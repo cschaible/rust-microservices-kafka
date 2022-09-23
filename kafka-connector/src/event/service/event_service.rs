@@ -107,6 +107,7 @@ pub async fn send_to_kafka(
                     .send(
                         FutureRecord::to(&*event.topic)
                             .payload(&event.payload)
+                            .partition(event.partition)
                             .key(&event.key)
                             .headers(headers),
                         Duration::from_secs(0),
@@ -125,7 +126,9 @@ pub async fn send_to_kafka(
             .expect("Commit of kafka transaction failed");
 
         info!("Sent {} events", number_of_events);
-    }
+    } /*else {
+          debug!("Nothing to send");
+      }*/
 }
 
 pub struct EventList {
