@@ -6,7 +6,7 @@ pub fn resolve_sr_settings() -> SrSettings {
 
     SrSettings::new_builder(schema_registry_url)
         .build()
-        .expect("Initialization of schema registry configuration failes")
+        .expect("Initialization of schema registry configuration failed")
 }
 
 pub fn get_avro_encoder<'a>(sr_settings: &SrSettings) -> AvroEncoder<'a> {
