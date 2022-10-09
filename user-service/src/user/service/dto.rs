@@ -10,14 +10,14 @@ use crate::user::model::phone_number::PhoneNumberTypeEnum;
 use crate::user::model::phone_number::{self,};
 use crate::user::model::user;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CreateUserDto {
     pub name: String,
     pub email: String,
     pub country: IsoCountryCodeEnum,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct UserDto {
     pub id: i64,
     pub version: i64,
@@ -40,14 +40,14 @@ impl From<user::Model> for UserDto {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CreatePhoneNumberDto {
     pub country_code: String,
     pub phone_number_type: PhoneNumberTypeEnum,
     pub call_number: String,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PhoneNumberDto {
     pub user_id: i64,
     pub country_code: String,

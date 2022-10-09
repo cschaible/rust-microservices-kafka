@@ -6,7 +6,7 @@ use crate::common::model::IsoCountryCodeEnum;
 use crate::user::service::dto::PhoneNumberDto;
 use crate::user::service::dto::UserDto;
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserResource {
     pub identifier: Uuid,

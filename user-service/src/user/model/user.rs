@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::common::model::IsoCountryCodeEnum;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior, Serialize)]
 #[sea_orm(table_name = "user_entity")]
 pub struct Model {
     #[sea_orm(primary_key)]

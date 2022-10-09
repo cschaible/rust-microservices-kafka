@@ -64,7 +64,7 @@ async fn build_resources<T: ConnectionTrait + Sized>(
     connection: &T,
     user_dtos: Vec<UserDto>,
 ) -> Result<Vec<UserResource>> {
-    let user_identifiers = (&user_dtos).iter().map(|u| u.identifier).collect();
+    let user_identifiers = user_dtos.iter().map(|u| u.identifier).collect();
     let phone_numbers_by_user_id =
         phone_number_service::find_all_by_user_identifiers(connection, user_identifiers).await?;
 

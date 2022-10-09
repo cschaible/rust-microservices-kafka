@@ -6,7 +6,7 @@ mod m20220403_initial_migration;
 mod m20220703_add_event_table;
 mod m20220805_add_trace_id_to_event_table;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "seaql_migrations")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]

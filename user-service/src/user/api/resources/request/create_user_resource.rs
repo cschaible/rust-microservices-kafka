@@ -5,7 +5,7 @@ use crate::common::model::IsoCountryCodeEnum;
 use crate::user::service::dto::CreatePhoneNumberDto;
 use crate::user::service::dto::CreateUserDto;
 
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateUserResource {
     pub name: String,
