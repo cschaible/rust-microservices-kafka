@@ -7,7 +7,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3.2.8", features = ["derive"] }
+clap = { version = "4.0.8", features = ["derive"] }
 futures = "0.3.21"
 rdkafka = "0.28.0"
 tokio = { version = "1.17.0", features = ["full"]}

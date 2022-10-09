@@ -9,4 +9,4 @@ license = "Apache-2.0"
 
 [dependencies]
 lazy_static = "1.4.0"
-opentelemetry = { version = "0.17", features = ["rt-tokio", "testing"] }
+opentelemetry = { version = "0.18.0", features = ["rt-tokio", "testing"] }

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::env;
+// use std::env;
 use std::sync::Arc;
 
 use opentelemetry::sdk::trace;
@@ -17,10 +17,10 @@ use tracing_subscriber::EnvFilter;
 /// init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 pub fn init_tracing<T>(package_name: &str, package_version: &str, env_filter_customizer: T)
 where T: Fn(EnvFilter) -> EnvFilter {
-    env::set_var(
-        "RUST_LOG",
-        env::var("RUST_LOG").unwrap_or_else(|_| "warn".to_string()),
-    );
+    // env::set_var(
+    // "RUST_LOG",
+    // env::var("RUST_LOG").unwrap_or_else(|_| "warn".to_string()),
+    // );
 
     let resource: Resource = axum_tracing_opentelemetry::make_resource(
         package_name.to_string(),
@@ -32,7 +32,7 @@ where T: Fn(EnvFilter) -> EnvFilter {
         Propagator::with_encoding(B3Encoding::SingleHeader),
     );
 
-    let tracer = opentelemetry_jaeger::new_pipeline()
+    let tracer = opentelemetry_jaeger::new_agent_pipeline()
         .with_service_name(package_name.to_string())
         .with_trace_config(
             trace::config()
