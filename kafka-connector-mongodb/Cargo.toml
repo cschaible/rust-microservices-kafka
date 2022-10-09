@@ -1,0 +1,31 @@
+[package]
+name = "kafka-connector-mongodb"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+axum = "0.5.0"
+axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
+common-error = { path = "../common-error" }
+dotenv = "0.15.0"
+futures = "0.3.21"
+mongodb = "2.3.0"
+opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.17.0", features = ["rt-tokio"] }
+opentelemetry-propagator-b3 = { path = "../opentelemetry-propagator-b3" }
+rdkafka = "0.28.0"
+serde = "1.0.136"
+serde_bytes = "0.11.7"
+serde_json = "1.0.79"
+tokio = { version = "1.17.0", features = ["full"] }
+tokio-cron-scheduler = { version = "0.8.1", features = ["signal"] }
+tower = "0.4.12"
+tower-http = { version = "0.3.3", features = ["compression-full", "trace"] }
+tracing = "0.1"
+tracing-common = { path = "../tracing-common" }
+tracing-opentelemetry = "0.18.0"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
