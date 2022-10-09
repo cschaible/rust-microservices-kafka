@@ -1,14 +1,14 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run user-service (release)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package user-service --bin user-service --release" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/user-service" />
+  <configuration default="false" name="accommodation - kafka-connector (release)" type="CargoCommandRunConfiguration" factoryName="Cargo Command" folderName="application-release">
+    <option name="command" value="run --package kafka-connector-mongodb --bin kafka-connector-mongodb --release" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-connector-mongodb" />
     <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />
     <option name="emulateTerminal" value="false" />
     <option name="withSudo" value="false" />
     <option name="buildTarget" value="REMOTE" />
-    <option name="backtrace" value="FULL" />
+    <option name="backtrace" value="SHORT" />
     <envs />
     <option name="isRedirectInput" value="false" />
     <option name="redirectInputPath" value="" />
