@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run kafka-connector (release)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package kafka-connector --bin kafka-connector --release" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-connector" />
+  <configuration default="false" name="user (debug)" type="CargoCommandRunConfiguration" factoryName="Cargo Command" folderName="application-debug">
+    <option name="command" value="run --package user-service --bin user-service" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/user-service" />
     <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />

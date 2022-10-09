@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run kafka-schema-publisher" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-    <option name="command" value="run --package kafka-schema-publisher --bin kafka-schema-publisher -- register local" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-schema-publisher" />
+  <configuration default="false" name="accommodation - kafka-connector (debug)" type="CargoCommandRunConfiguration" factoryName="Cargo Command" folderName="application-debug">
+    <option name="command" value="run --package kafka-connector-mongodb --bin kafka-connector-mongodb" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-connector-mongodb" />
     <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />
