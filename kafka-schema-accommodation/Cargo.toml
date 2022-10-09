@@ -1,0 +1,12 @@
+[package]
+name = "kafka-schema-accommodation"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+avro-rs = "0.13.0"
+schema_registry_converter = { version = "2.1.0", features = ["avro"] }
+serde = "1.0.136"

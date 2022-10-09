@@ -51,6 +51,7 @@ async fn main() {
     match args.action {
         TopicAction::CreateTopics => {
             create_user_topic(&admin_client, 2, 1).await;
+            create_accommodation_topic(&admin_client, 2, 1).await;
         }
     }
 }
@@ -61,6 +62,20 @@ async fn create_user_topic(
     replication_factor: i32,
 ) {
     create_topic(admin_client, "user", partitions, replication_factor).await;
+}
+
+async fn create_accommodation_topic(
+    admin_client: &AdminClient<DefaultClientContext>,
+    partitions: i32,
+    replication_factor: i32,
+) {
+    create_topic(
+        admin_client,
+        "accommodation",
+        partitions,
+        replication_factor,
+    )
+    .await;
 }
 
 async fn create_topic(

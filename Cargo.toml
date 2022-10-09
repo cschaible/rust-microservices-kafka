@@ -1,10 +1,13 @@
 [workspace]
 
 members = [
+    "accommodation-service",
     "common-db",
     "common-error",
+    "kafka-schema-accommodation",
     "kafka-common",
     "kafka-connector",
+    "kafka-connector-mongodb",
     "kafka-schema-common",
     "kafka-schema-publisher",
     "kafka-schema-user",

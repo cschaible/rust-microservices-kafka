@@ -9,6 +9,7 @@ license = "MIT"
 [dependencies]
 clap = { version = "4.0.8", features = ["derive"] }
 futures = "0.3.21"
+kafka-schema-accommodation = { path = "../kafka-schema-accommodation" }
 kafka-schema-common = { path = "../kafka-schema-common" }
 kafka-schema-user = { path = "../kafka-schema-user" }
 schema_registry_converter = { version = "2.1.0", default-features = false, features = ["avro", "blocking"] }
