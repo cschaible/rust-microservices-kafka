@@ -7,10 +7,10 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum-tracing-opentelemetry = { version = "0.3.0", features = ["jaeger"] }
-opentelemetry = { version = "0.17", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
+axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
+opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.17.0", features = ["rt-tokio"] }
 opentelemetry-propagator-b3 = { path = "../opentelemetry-propagator-b3" }
 tracing = "0.1"
-tracing-opentelemetry = "0.17"
+tracing-opentelemetry = "0.18.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }

@@ -13,4 +13,4 @@ schema_registry_converter = { version = "2.1.0", features = ["avro"] }
 serde = "1.0.136"
 tracing = "0.1"
 tracing-subscriber = "0.3"
-uuid = { version = "0.8.2", features = ["serde", "v4"] }
+uuid = { version = "1.1.2", features = ["serde", "v4"] }

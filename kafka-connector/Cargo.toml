@@ -9,25 +9,25 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0"
 axum = "0.5.0"
-axum-tracing-opentelemetry = { version = "0.3.0", features = ["jaeger"] }
+axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
 common-error = { path = "../common-error" }
 dotenv = "0.15.0"
 futures = "0.3.21"
-opentelemetry = { version = "0.17", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.17.0", features = ["rt-tokio"] }
 opentelemetry-propagator-b3 = { path = "../opentelemetry-propagator-b3" }
 rdkafka = "0.28.0"
-sea-orm = { version = "^0.8.0", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false }
-sea-orm-migration = { version = "^0.8.0", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
-sea-query = { version = "0.24.6", features = ["derive", "backend-postgres", "with-chrono", "with-uuid"], default-features = false }
-sea-schema = { version = "^0.8.0", features = ["postgres", "discovery", "writer", "probe", "debug-print", "runtime-tokio-rustls"], default-features = false }
+sea-orm = { version = "0.9.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false }
+sea-orm-migration = { version = "0.9.3", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
+sea-query = { version = "0.26.3", features = ["derive", "backend-postgres", "with-chrono", "with-uuid"], default-features = false }
+sea-schema = { version = "0.9.4", features = ["postgres", "discovery", "writer", "probe", "debug-print", "runtime-tokio-rustls"], default-features = false }
 serde = "1.0.136"
 serde_json = "1.0.79"
 tokio = { version = "1.17.0", features = ["full"] }
-tokio-cron-scheduler = { version = "0.7.6", features = ["signal"] }
+tokio-cron-scheduler = { version = "0.8.1", features = ["signal"] }
 tower = "0.4.12"
 tower-http = { version = "0.3.3", features = ["compression-full", "trace"] }
 tracing = "0.1"
 tracing-common = { path = "../tracing-common" }
-tracing-opentelemetry = "0.17"
+tracing-opentelemetry = "0.18.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }

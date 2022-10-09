@@ -10,14 +10,16 @@ use tokio_cron_scheduler::JobScheduler;
 
 use crate::job;
 
-pub fn run_scheduled_job(
+pub async fn run_scheduled_job(
     connection: Arc<DatabaseConnection>,
     producer: Arc<FutureProducer>,
     tracing_propagator: Arc<Propagator>,
 ) {
     let job_synchronization_mutex = Arc::new(Mutex::new(false));
 
-    let scheduler = JobScheduler::new().expect("Job scheduler couldn't be instantiated");
+    let scheduler = JobScheduler::new()
+        .await
+        .expect("Job scheduler couldn't be instantiated");
     let job = Job::new_repeated_async(Duration::from_secs(1), move |_job_id, _lock| {
         let p_job_synchronization_mutex = job_synchronization_mutex.clone();
         let p_connection = connection.clone();
@@ -35,11 +37,12 @@ pub fn run_scheduled_job(
         })
     })
     .expect("Job couldn't be instantiated");
-    scheduler.add(job).expect("Job couldn't be scheduled");
+    scheduler.add(job).await.expect("Job couldn't be scheduled");
 
     #[cfg(feature = "signal")]
     scheduler.shutdown_on_ctrl_c();
     scheduler
         .start()
+        .await
         .expect("Job scheduler couldn't be started");
 }
