@@ -1,6 +1,6 @@
 use sea_orm::entity::prelude::*;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior)]
+#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior)]
 #[sea_orm(table_name = "event_entity")]
 pub struct Model {
     #[sea_orm(primary_key)]

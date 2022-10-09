@@ -30,7 +30,11 @@ async fn main() {
     // Initialize logging and tracing
     init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
         // e.add_directive("kafka_connector=trace".parse().unwrap_or_default())
-        e.add_directive("kafka_connector::event=trace".parse().unwrap_or_default())
+        e.add_directive(
+            format!("{}::event=trace", env!("CARGO_PKG_NAME").replace('-', "_"))
+                .parse()
+                .unwrap_or_default(),
+        )
     });
 
     // Initialize db connection pool
@@ -43,7 +47,7 @@ async fn main() {
     let propagator = Arc::new(Propagator::with_encoding(B3Encoding::SingleHeader));
 
     // Run scheduled job to poll events from database and send them to kafka
-    run_scheduled_job(db, producer, propagator);
+    run_scheduled_job(db, producer, propagator).await;
 
     // Create health endpoint routing.
     let app = Router::new()

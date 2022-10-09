@@ -2,10 +2,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
+use futures::future;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use opentelemetry_propagator_b3::propagator::B3_SINGLE_HEADER;
 use rdkafka::message::OwnedHeaders;
-use rdkafka::producer::future_producer::OwnedDeliveryResult;
 use rdkafka::producer::FutureProducer;
 use rdkafka::producer::FutureRecord;
 use rdkafka::producer::Producer;
@@ -19,7 +19,6 @@ use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
 use tracing::info;
 use tracing::instrument;
-use tracing::instrument::Instrumented;
 use tracing::span;
 use tracing::Instrument;
 use tracing::Level;
@@ -29,13 +28,6 @@ use super::super::model::event;
 use super::super::model::event::Entity as EventEntity;
 use crate::common::db::MAX_PAGE_SIZE;
 
-pub async fn poll_and_send<T: ConnectionTrait + Sized>() {}
-
-#[instrument(
-    name = "kafka_connector.find_next_page",
-    skip(connection),
-    level = "trace"
-)]
 pub async fn find_next_page<T: ConnectionTrait + Sized>(connection: &T) -> Result<EventList> {
     let page_size = MAX_PAGE_SIZE + 1;
 
@@ -58,7 +50,8 @@ pub async fn delete_from_db<T: ConnectionTrait + Sized>(
     connection: &T,
     events: &EventList,
 ) -> Result<u64> {
-    let event_ids: Vec<i32> = (&events.events)
+    let event_ids: Vec<i32> = events
+        .events
         .iter()
         .take(MAX_PAGE_SIZE)
         .map(|e| e.id)
@@ -88,17 +81,21 @@ pub async fn send_to_kafka(
     if number_of_events > 0 {
         let mut event_ids: Vec<i32> = Vec::new();
 
+        info!("Sending {} events", number_of_events);
+
         // Start kafka transaction
         producer
             .begin_transaction()
             .expect("Kafka transaction creation failed");
 
         // Send each event individually. Send a span for each message to jaeger.
-        for event in events_to_send {
+        future::try_join_all(events_to_send.iter().map(|event| {
             let trace_id = event.trace_id.clone();
 
             // Initialize span
             let span = span!(Level::TRACE, "kafka_connector.send");
+            let _ = span.enter();
+
             if let Some(id) = trace_id.clone() {
                 span.set_parent_from_b3(tracing_propagator.clone(), id);
             }
@@ -110,23 +107,26 @@ pub async fn send_to_kafka(
             };
 
             // Send message to kafka
-            let delivery_result: Instrumented<OwnedDeliveryResult> = {
-                producer
-                    .send(
-                        FutureRecord::to(&*event.topic)
-                            .payload(&event.payload)
-                            .partition(event.partition)
-                            .key(&event.key)
-                            .headers(headers),
-                        Duration::from_secs(0),
-                    )
-                    .await
+            // Instrumented<OwnedDeliveryResult>
+            let delivery_result = {
+                producer.send(
+                    FutureRecord::to(&*event.topic)
+                        .payload(&event.payload)
+                        .partition(event.partition)
+                        .key(&event.key)
+                        .headers(headers),
+                    Duration::from_secs(0),
+                )
             }
             .instrument(span);
 
-            delivery_result.into_inner().expect("Couldn't send event");
+            // delivery_result.into_inner().expect("Couldn't send event");
             event_ids.push(event.id);
-        }
+
+            delivery_result
+        }))
+        .await
+        .expect("Message delivery failed");
 
         // Commit kafka transaction
         producer
