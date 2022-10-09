@@ -4,7 +4,6 @@ use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
 use sea_orm::DatabaseConnection;
 use tokio::sync::Mutex;
-use tracing::debug;
 use tracing::error;
 
 use crate::event_service;
@@ -26,8 +25,6 @@ pub async fn poll_and_send(
             )
             .await;
         }
-    } else {
-        debug!("Processing still locked. Do nothing.");
     }
 }
 
@@ -41,6 +38,11 @@ async fn find_send_delete(
 
     match event_list {
         Ok(events) => {
+            // Skip further processing if there are no events to send
+            if events.events.is_empty() {
+                return false;
+            }
+
             // Send data
             event_service::send_to_kafka(producer.clone(), tracing_propagator.clone(), &events)
                 .await;
@@ -48,7 +50,7 @@ async fn find_send_delete(
             // Delete sent events
             event_service::delete_from_db(connection.as_ref(), &events)
                 .await
-                .expect("");
+                .expect("Delete of sent events from database failed");
 
             // Send signal to continue without waiting
             events.has_more
