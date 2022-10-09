@@ -1,7 +1,7 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior, Serialize)]
 #[sea_orm(table_name = "event_entity")]
 pub struct Model {
     #[sea_orm(primary_key)]

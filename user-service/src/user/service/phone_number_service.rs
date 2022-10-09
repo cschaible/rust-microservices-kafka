@@ -38,7 +38,7 @@ pub async fn save<T: ConnectionTrait + Sized>(
 
     if !phone_numbers.is_empty() {
         // Convert the dtos into entities
-        let numbers: Vec<phone_number::ActiveModel> = (&phone_numbers)
+        let numbers: Vec<phone_number::ActiveModel> = phone_numbers
             .iter()
             .map(|p| phone_number::ActiveModel {
                 user_id: Set(user.id),

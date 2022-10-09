@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, DeriveActiveEnum, Deserialize, Serialize)]
 #[sea_orm(rs_type = "String", db_type = "String(Some(2))")]
 pub enum IsoCountryCodeEnum {
     #[sea_orm(string_value = "DE")]

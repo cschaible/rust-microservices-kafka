@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "String(Some(10))")]
 pub enum PhoneNumberTypeEnum {
     #[sea_orm(string_value = "Business")]
@@ -13,7 +13,7 @@ pub enum PhoneNumberTypeEnum {
     Mobile,
 }
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, DeriveActiveModelBehavior, Serialize)]
 #[sea_orm(table_name = "phone_number")]
 pub struct Model {
     #[sea_orm(primary_key)]

@@ -3,7 +3,7 @@ use serde::Deserialize;
 use crate::user::model::phone_number::PhoneNumberTypeEnum;
 use crate::user::service::dto::CreatePhoneNumberDto;
 
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePhoneNumberResource {
     pub country_code: String,

@@ -6,7 +6,7 @@ pub trait SerializableEventDto: Send + Sync {
     fn as_any(&self) -> &dyn Any;
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EventDto {
     pub topic: String,
     pub partition: i32,
