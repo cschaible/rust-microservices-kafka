@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use opentelemetry::sdk::trace;
 use opentelemetry::sdk::Resource;
+use opentelemetry::trace::TraceId;
 use opentelemetry::Context;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
@@ -63,6 +64,30 @@ where T: Fn(EnvFilter) -> EnvFilter {
         .expect("Global subscriber initialization failed");
 }
 
+pub fn trace_id_from_b3(propagator: Arc<Propagator>, b3_trace_id: String) -> TraceId {
+    let mut extractor: HashMap<String, String> = HashMap::new();
+    extractor.insert(B3_SINGLE_HEADER.to_string(), b3_trace_id);
+
+    let context = propagator
+        .extract_single_header(&extractor)
+        .expect("Couldn't extract trace header");
+
+    context.trace_id()
+}
+
+pub fn get_context_from_b3(propagator: Arc<Propagator>, b3_trace_id: String) -> Context {
+    let mut extractor: HashMap<String, String> = HashMap::new();
+    extractor.insert(B3_SINGLE_HEADER.to_string(), b3_trace_id);
+
+    let context = propagator
+        .extract_single_header(&extractor)
+        .expect("Couldn't extract trace header");
+
+    use opentelemetry::trace::TraceContextExt;
+
+    Context::new().with_remote_span_context(context)
+}
+
 pub trait B3SpanExt {
     fn set_parent_from_b3(&self, propagator: Arc<Propagator>, b3_trace_id: String);
 }
@@ -90,6 +115,7 @@ pub fn get_b3_trace_id() -> Option<String> {
     let context = tracing::Span::current().context();
     let span = context.span();
     let span_context = span.span_context();
+
     let span_id = span_context
         .is_valid()
         .then(|| span_context.span_id().to_string());

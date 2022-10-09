@@ -1,0 +1,58 @@
+[package]
+name = "accommodation-service"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1.52"
+async-graphql = { version = "4.0.12", features = ["dataloader", "opentelemetry", "tracing", "uuid", "tracing-futures"] }
+async-graphql-axum = "4.0.12"
+avro-rs = "0.13.0"
+axum = "0.5.0"
+axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
+# Use "serde_with" feature to convert UUIDs to binary with subtype 4 (readable UUID in Mongodb Compass)
+bson = { version = "2.4.0", features = ["uuid-1", "serde_with"] }
+chrono = "0.4.19"
+common-db = { path = "../common-db" }
+common-error = { path = "../common-error" }
+dotenv = "0.15.0"
+futures = "0.3.21"
+futures-util = "0.3.24"
+itertools = "0.10.3"
+kafka-common = { path = "../kafka-common" }
+kafka-schema-accommodation = { path = "../kafka-schema-accommodation" }
+kafka-schema-common = { path = "../kafka-schema-common" }
+kafka-schema-user = { path = "../kafka-schema-user" }
+mongodb = "2.3.0"
+opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.17.0", features = ["rt-tokio"] }
+opentelemetry-propagator-b3 = { path = "../opentelemetry-propagator-b3" }
+rdkafka = "0.28.0"
+schema_registry_converter = { version = "2.1.0", features = ["avro"] }
+serde = "1.0.136"
+serde_bytes = "0.11.7"
+serde_json = "1.0.79"
+tokio = { version = "1.17.0", features = ["full"] }
+tower = { version = "0.4.12", features = ["limit"] }
+tower-http = { version = "0.3.3", features = ["compression-full", "trace"] }
+tracing = "0.1"
+tracing-common = { path = "../tracing-common" }
+tracing-opentelemetry = "0.18.0"
+tracing-serde = "0.1.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+uuid = { version = "1.1.2", features = ["serde", "v4"] }
+
+[profile.release-fast]
+inherits = "release"
+debug = 1
+lto = "off"
+opt-level = 0
+strip = false
+incremental = true
+
+[profile.release]
+lto = true

@@ -1,6 +1,16 @@
 use std::vec;
 
 use clap::Parser;
+use kafka_schema_accommodation::schema_create_accommodation::RAW_SCHEMA_CREATE_ACCOMMODATION_V1;
+use kafka_schema_accommodation::schema_create_accommodation::SCHEMA_NAME_CREATE_ACCOMMODATION;
+use kafka_schema_accommodation::schema_create_room_type::RAW_SCHEMA_CREATE_ROOM_TPE_V1;
+use kafka_schema_accommodation::schema_create_room_type::SCHEMA_NAME_CREATE_ROOM_TYPE;
+use kafka_schema_accommodation::schema_delete_room_type::RAW_SCHEMA_DELETE_ROOM_TPE_V1;
+use kafka_schema_accommodation::schema_delete_room_type::SCHEMA_NAME_DELETE_ROOM_TYPE;
+use kafka_schema_accommodation::schema_update_accommodation::RAW_SCHEMA_UPDATE_ACCOMMODATION_V1;
+use kafka_schema_accommodation::schema_update_accommodation::SCHEMA_NAME_UPDATE_ACCOMMODATION;
+use kafka_schema_accommodation::schema_update_room_type::RAW_SCHEMA_UPDATE_ROOM_TPE_V1;
+use kafka_schema_accommodation::schema_update_room_type::SCHEMA_NAME_UPDATE_ROOM_TYPE;
 use kafka_schema_common::schema_key::RAW_SCHEMA_KEY;
 use kafka_schema_common::schema_key::SCHEMA_NAME_KEY;
 use kafka_schema_user::schema_create_user::RAW_SCHEMA_CREATE_USER_V1;
@@ -46,13 +56,31 @@ fn main() {
 
     match args.action {
         PublisherAction::Register => {
-            register_schema(&schema_registry_url, SCHEMA_NAME_KEY, RAW_SCHEMA_KEY);
+            let schemas = vec![
+                SchemaToRegister::new(SCHEMA_NAME_KEY, RAW_SCHEMA_KEY),
+                // User - Context
+                SchemaToRegister::new(SCHEMA_NAME_CREATE_USER, RAW_SCHEMA_CREATE_USER_V1),
+                // Accommodation - Context
+                SchemaToRegister::new(
+                    SCHEMA_NAME_CREATE_ACCOMMODATION,
+                    RAW_SCHEMA_CREATE_ACCOMMODATION_V1,
+                ),
+                SchemaToRegister::new(
+                    SCHEMA_NAME_UPDATE_ACCOMMODATION,
+                    RAW_SCHEMA_UPDATE_ACCOMMODATION_V1,
+                ),
+                SchemaToRegister::new(SCHEMA_NAME_CREATE_ROOM_TYPE, RAW_SCHEMA_CREATE_ROOM_TPE_V1),
+                SchemaToRegister::new(SCHEMA_NAME_DELETE_ROOM_TYPE, RAW_SCHEMA_DELETE_ROOM_TPE_V1),
+                SchemaToRegister::new(SCHEMA_NAME_UPDATE_ROOM_TYPE, RAW_SCHEMA_UPDATE_ROOM_TPE_V1),
+            ];
 
-            register_schema(
-                &schema_registry_url,
-                SCHEMA_NAME_CREATE_USER,
-                RAW_SCHEMA_CREATE_USER_V1,
-            );
+            for schema in schemas {
+                register_schema(
+                    &schema_registry_url,
+                    schema.subject_name,
+                    schema.schema_definition,
+                );
+            }
         }
     }
 }
@@ -93,5 +121,19 @@ fn print_registration_result(subject_name: &str, result: Result<RegisteredSchema
             subject_name, registered_schema.id
         ),
         Err(e) => error!("Failed to register schema \"{}\": \n{}", subject_name, e),
+    }
+}
+
+struct SchemaToRegister<'a> {
+    subject_name: &'a str,
+    schema_definition: &'a str,
+}
+
+impl<'a> SchemaToRegister<'a> {
+    fn new(name: &'a str, schema: &'a str) -> SchemaToRegister {
+        Self {
+            subject_name: name,
+            schema_definition: schema,
+        }
     }
 }
