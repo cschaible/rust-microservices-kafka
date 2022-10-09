@@ -1,19 +1,5 @@
 version: "2.1"
 services:
-  pgadmin:
-    image: dpage/pgadmin4:6.11
-    hostname: pgadmin
-    container_name: pgadmin
-    ports:
-      - "5433:5433"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: test@example.com
-      PGADMIN_DEFAULT_PASSWORD: secret
-      PGADMIN_LISTEN_PORT: 5433
-    depends_on:
-      - postgresql
-    mem_limit: 128m
-  
   postgresql:
     image: postgres:14.4-alpine
     hostname: postgres
@@ -30,7 +16,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    mem_limit: 256m
+    mem_limit: 512m
 
   mongodb1:
     image: mongo:6.0.1
@@ -45,7 +31,7 @@ services:
     #  MONGO_INITDB_ROOT_USERNAME: demouser
     #  MONGO_INITDB_ROOT_PASSWORD: secret
     command: mongod --replSet replica-set-1
-    mem_limit: 256m
+    mem_limit: 768m
 
   mongodb2:
     image: mongo:6.0.1
@@ -60,7 +46,7 @@ services:
     #  MONGO_INITDB_ROOT_USERNAME: demouser
     #  MONGO_INITDB_ROOT_PASSWORD: secret
     command: mongod --replSet replica-set-1
-    mem_limit: 256m
+    mem_limit: 768m
 
   mongodb3:
     image: mongo:6.0.1
@@ -75,7 +61,7 @@ services:
     #environment:
     #  MONGO_INITDB_ROOT_USERNAME: demouser
     #  MONGO_INITDB_ROOT_PASSWORD: secret
-    mem_limit: 256m
+    mem_limit: 768m
 
   mongoinit:
     image: mongo:6.0.1
@@ -90,7 +76,7 @@ services:
     command: >
       mongosh --host mongodb1:27017 --eval 
       '
-      db = (new Mongo("mongodb1:27017")).getDB("booking-service");
+      db = (new Mongo("mongodb1:27017")).getDB("accommodation-service");
       config = {
       "_id" : "replica-set-1",
       "members" : [
@@ -142,9 +128,9 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_HEAP_OPTS: '-Xmx256m -Xms128m'
+      KAFKA_HEAP_OPTS: '-Xmx384m -Xms128m'
       KAFKA_JVM_PERFORMANCE_OPTS: '-client -XX:+UseG1GC -XX:+CMSClassUnloadingEnabled -XX:+CMSScavengeBeforeRemark -XX:+DisableExplicitGC -Djava.awt.headless=true'
-    mem_limit: 512m
+    mem_limit: 768m
 
   schema-registry:
     image: confluentinc/cp-schema-registry:7.2.1
@@ -158,8 +144,8 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-      EXTRA_ARGS: '-Xmx256m -Xms64m'
-    mem_limit: 512m
+      EXTRA_ARGS: '-Xmx384m -Xms64m'
+    mem_limit: 768m
   
   kafdrop:
     image: obsidiandynamics/kafdrop:3.30.0
@@ -184,9 +170,12 @@ services:
     ports:
       - "6831:6831/udp"
       - "6832:6832/udp"
+      - "16685:16685"
       - "16686:16686"
+      - "16687:16687"
     environment:
       SPAN_STORAGE_TYPE: 'badger'
-      BADGER_EPHEMERAL: 'false'
+      BADGER_EPHEMERAL: 'true'
+      BADGER_DIRECTORY_KEY: '/badger/key'
       BADGER_DIRECTORY_VALUE: '/badger/data'
-    mem_limit: 256m
+    mem_limit: 768m
