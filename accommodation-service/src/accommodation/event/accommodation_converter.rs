@@ -13,7 +13,6 @@ use kafka_schema_common::schema_key::SCHEMA_NAME_KEY;
 use kafka_schema_common::IdentifierAvro;
 use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
-use tokio::sync::Mutex;
 use tracing::instrument;
 
 use crate::accommodation::model::Accommodation;
@@ -23,13 +22,13 @@ use crate::event::EventConverter;
 use crate::TopicConfiguration;
 
 pub struct AccommodationEventEncoder<'a> {
-    pub(crate) avro_encoder: Arc<Mutex<AvroEncoder<'a>>>,
+    pub(crate) avro_encoder: Arc<AvroEncoder<'a>>,
     pub(crate) topic_configuration: TopicConfiguration,
 }
 
 impl<'a> AccommodationEventEncoder<'a> {
     pub fn new(
-        avro_encoder: Arc<Mutex<AvroEncoder>>,
+        avro_encoder: Arc<AvroEncoder>,
         topic_configuration: TopicConfiguration,
     ) -> AccommodationEventEncoder {
         AccommodationEventEncoder {
@@ -50,7 +49,7 @@ impl<'a> EventConverter for AccommodationEventEncoder<'a> {
 
     #[instrument(name = "create_accommodation_event_converter.handle", skip_all)]
     async fn handle(
-        &mut self,
+        &self,
         event_type: String,
         event: &Box<dyn SerializableEventDto>,
     ) -> Result<EventDto, AppError> {
@@ -66,20 +65,18 @@ impl<'a> EventConverter for AccommodationEventEncoder<'a> {
         // Get topic
         let topic = self.topic_configuration.topic.clone();
 
-        let mut avro_encoder = self.avro_encoder.lock().await;
-
         // Serialize value
         let value_sns = SubjectNameStrategy::RecordNameStrategy(event_type.clone());
         let serialized_value: Vec<u8> = if event_type == *SCHEMA_NAME_CREATE_ACCOMMODATION {
             let create_accommodation_avro: CreateAccommodationAvro =
                 accommodation_event.clone().into();
-            avro_encoder
+            self.avro_encoder
                 .encode_struct(create_accommodation_avro, &value_sns)
                 .await?
         } else if event_type == *SCHEMA_NAME_UPDATE_ACCOMMODATION {
             let update_accommodation_avro: UpdateAccommodationAvro =
                 accommodation_event.clone().into();
-            avro_encoder
+            self.avro_encoder
                 .encode_struct(update_accommodation_avro, &value_sns)
                 .await?
         } else {
@@ -97,7 +94,7 @@ impl<'a> EventConverter for AccommodationEventEncoder<'a> {
         };
         let key_sns = SubjectNameStrategy::RecordNameStrategy(SCHEMA_NAME_KEY.to_string());
 
-        let serialized_key = avro_encoder.encode_struct(key_avro, &key_sns).await?;
+        let serialized_key = self.avro_encoder.encode_struct(key_avro, &key_sns).await?;
 
         // Return dto with required parameters to send it with kafka
         Ok(EventDto {

@@ -15,7 +15,7 @@ pub trait EventConverter: Sync + Send {
 
     #[allow(clippy::borrowed_box)]
     async fn handle(
-        &mut self,
+        &self,
         event_type: String,
         event: &Box<dyn SerializableEventDto>,
     ) -> Result<EventDto, AppError>;

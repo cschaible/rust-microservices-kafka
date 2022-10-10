@@ -8,7 +8,6 @@ use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::async_impl::schema_registry::SrSettings;
 use schema_registry_converter::avro_common::DecodeResult;
 use schema_registry_converter::error::SRCError;
-use tokio::sync::Mutex;
 
 pub fn resolve_sr_settings() -> SrSettings {
     let schema_registry_url = std::env::var("KAFKA_SCHEMA_REGISTRY_URL")
@@ -31,20 +30,19 @@ pub fn get_avro_decoder<'a>(sr_settings: &SrSettings) -> AvroDecoder<'a> {
 
 #[async_trait]
 pub trait RecordDecoder: Send + Sync {
-    async fn decode(&mut self, bytes: Option<&[u8]>) -> Result<DecodeResult, SRCError>;
+    async fn decode(&self, bytes: Option<&[u8]>) -> Result<DecodeResult, SRCError>;
     // async fn deserialize<'b, T: Deserialize<'b>>(&self, value: Value) ->
     // Result<Box<T>, Error>;
 }
 
 pub struct AvroRecordDecoder<'a> {
-    pub avro_decoder: Mutex<AvroDecoder<'a>>,
+    pub avro_decoder: AvroDecoder<'a>,
 }
 
 #[async_trait]
 impl<'a> RecordDecoder for AvroRecordDecoder<'a> {
-    async fn decode(&mut self, bytes: Option<&[u8]>) -> Result<DecodeResult, SRCError> {
-        let mut decoder = self.avro_decoder.lock().await;
-        decoder.decode(bytes).await
+    async fn decode(&self, bytes: Option<&[u8]>) -> Result<DecodeResult, SRCError> {
+        self.avro_decoder.decode(bytes).await
     }
 
     // async fn deserialize<'b, T: Deserialize<'b>>(&self, value: Value) ->

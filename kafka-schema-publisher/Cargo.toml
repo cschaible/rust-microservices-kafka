@@ -12,6 +12,6 @@ futures = "0.3.21"
 kafka-schema-accommodation = { path = "../kafka-schema-accommodation" }
 kafka-schema-common = { path = "../kafka-schema-common" }
 kafka-schema-user = { path = "../kafka-schema-user" }
-schema_registry_converter = { version = "2.1.0", default-features = false, features = ["avro", "blocking"] }
+schema_registry_converter = { git = "https://github.com/gklijs/schema_registry_converter", branch = "main", default-features = false, features = ["avro", "blocking"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"

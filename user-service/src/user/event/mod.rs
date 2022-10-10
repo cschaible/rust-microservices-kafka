@@ -14,7 +14,6 @@ use kafka_schema_user::PhoneNumberTypeEnumAvro;
 use kafka_schema_user::DATA_TYPE_USER;
 use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
-use tokio::sync::Mutex;
 use tracing::instrument;
 
 use super::model::phone_number::PhoneNumberTypeEnum;
@@ -59,7 +58,7 @@ impl From<UserWithPhoneNumbersDto> for CreateUserAvro {
 }
 
 pub struct UserDtoEventConverter<'a> {
-    pub(crate) avro_encoder: Arc<Mutex<AvroEncoder<'a>>>,
+    pub(crate) avro_encoder: Arc<AvroEncoder<'a>>,
     pub(crate) topic_configuration: TopicConfiguration,
 }
 
@@ -70,10 +69,7 @@ impl<'a> EventConverter for UserDtoEventConverter<'a> {
     }
 
     #[instrument(name = "user_event_converter.handle", skip_all)]
-    async fn handle(
-        &mut self,
-        event: &Box<dyn SerializableEventDto>,
-    ) -> Result<EventDto, AppError> {
+    async fn handle(&self, event: &Box<dyn SerializableEventDto>) -> Result<EventDto, AppError> {
         let user_event = event
             .as_any()
             .downcast_ref::<UserWithPhoneNumbersDto>()
@@ -89,13 +85,12 @@ impl<'a> EventConverter for UserDtoEventConverter<'a> {
         // Get topic
         let topic = self.topic_configuration.topic.clone();
 
-        let mut avro_encoder = self.avro_encoder.lock().await;
-
         // Serialize value
         let create_user_avro: CreateUserAvro = user_event.clone().into();
         let value_sns =
             SubjectNameStrategy::RecordNameStrategy(SCHEMA_NAME_CREATE_USER.to_string());
-        let serialized_value = avro_encoder
+        let serialized_value = self
+            .avro_encoder
             .encode_struct(create_user_avro, &value_sns)
             .await?;
 
@@ -110,7 +105,7 @@ impl<'a> EventConverter for UserDtoEventConverter<'a> {
         };
         let key_sns = SubjectNameStrategy::RecordNameStrategy(SCHEMA_NAME_KEY.to_string());
 
-        let serialized_key = avro_encoder.encode_struct(key_avro, &key_sns).await?;
+        let serialized_key = self.avro_encoder.encode_struct(key_avro, &key_sns).await?;
 
         // Return dto with required parameters to send it with kafka
         Ok(EventDto {

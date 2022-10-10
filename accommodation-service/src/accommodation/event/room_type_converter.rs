@@ -15,7 +15,6 @@ use kafka_schema_common::schema_key::SCHEMA_NAME_KEY;
 use kafka_schema_common::IdentifierAvro;
 use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
-use tokio::sync::Mutex;
 use tracing::instrument;
 
 use crate::accommodation::model::RoomType;
@@ -25,13 +24,13 @@ use crate::event::EventConverter;
 use crate::TopicConfiguration;
 
 pub struct RoomTypeEventEncoder<'a> {
-    pub(crate) avro_encoder: Arc<Mutex<AvroEncoder<'a>>>,
+    pub(crate) avro_encoder: Arc<AvroEncoder<'a>>,
     pub(crate) topic_configuration: TopicConfiguration,
 }
 
 impl<'a> RoomTypeEventEncoder<'a> {
     pub fn new(
-        avro_encoder: Arc<Mutex<AvroEncoder>>,
+        avro_encoder: Arc<AvroEncoder>,
         topic_configuration: TopicConfiguration,
     ) -> RoomTypeEventEncoder {
         RoomTypeEventEncoder {
@@ -54,7 +53,7 @@ impl<'a> EventConverter for RoomTypeEventEncoder<'a> {
 
     #[instrument(name = "create_room_type_event_converter.handle", skip_all)]
     async fn handle(
-        &mut self,
+        &self,
         event_type: String,
         event: &Box<dyn SerializableEventDto>,
     ) -> Result<EventDto, AppError> {
@@ -73,23 +72,21 @@ impl<'a> EventConverter for RoomTypeEventEncoder<'a> {
         // Get topic
         let topic = self.topic_configuration.topic.clone();
 
-        let mut avro_encoder = self.avro_encoder.lock().await;
-
         // Serialize value
         let value_sns = SubjectNameStrategy::RecordNameStrategy(event_type.clone());
         let serialized_value: Vec<u8> = if event_type == *SCHEMA_NAME_CREATE_ROOM_TYPE {
             let create_room_type_avro_avro: CreateRoomTypeAvro = room_type_event.clone().into();
-            avro_encoder
+            self.avro_encoder
                 .encode_struct(create_room_type_avro_avro, &value_sns)
                 .await?
         } else if event_type == *SCHEMA_NAME_UPDATE_ROOM_TYPE {
             let update_room_type_avro: UpdateRoomTypeAvro = room_type_event.clone().into();
-            avro_encoder
+            self.avro_encoder
                 .encode_struct(update_room_type_avro, &value_sns)
                 .await?
         } else if event_type == *SCHEMA_NAME_DELETE_ROOM_TYPE {
             let delete_room_type_avro: DeleteRoomTypeAvro = room_type_event.clone().into();
-            avro_encoder
+            self.avro_encoder
                 .encode_struct(delete_room_type_avro, &value_sns)
                 .await?
         } else {
@@ -108,7 +105,7 @@ impl<'a> EventConverter for RoomTypeEventEncoder<'a> {
         };
         let key_sns = SubjectNameStrategy::RecordNameStrategy(SCHEMA_NAME_KEY.to_string());
 
-        let serialized_key = avro_encoder.encode_struct(key_avro, &key_sns).await?;
+        let serialized_key = self.avro_encoder.encode_struct(key_avro, &key_sns).await?;
 
         // Return dto with required parameters to send it with kafka
         Ok(EventDto {

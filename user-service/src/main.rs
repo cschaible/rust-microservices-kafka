@@ -11,7 +11,6 @@ use common::kafka::resolve_sr_settings;
 use dotenv::dotenv;
 use migration::Migrator;
 use sea_orm_migration::MigratorTrait;
-use tokio::sync::Mutex;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
 use tracing_common::init_tracing;
@@ -61,7 +60,7 @@ async fn main() {
 
     // Construct avro encoder
     let sr_settings = resolve_sr_settings();
-    let avro_encoder = Mutex::new(get_avro_encoder(&sr_settings));
+    let avro_encoder = get_avro_encoder(&sr_settings);
 
     // Construct topic configuration
     let user_topic_configuration = TopicConfiguration {
@@ -74,8 +73,7 @@ async fn main() {
         avro_encoder: Arc::new(avro_encoder),
         topic_configuration: user_topic_configuration,
     };
-    let user_event_converter: Arc<Mutex<DynEventConverter>> =
-        Arc::new(Mutex::new(Box::new(user_encoder)));
+    let user_event_converter: Arc<DynEventConverter> = Arc::new(Box::new(user_encoder));
 
     let event_dispatcher = EventDispatcher {
         event_converters: vec![user_event_converter],
@@ -84,7 +82,7 @@ async fn main() {
     // Construct request context
     let context = ContextImpl {
         db: Arc::new(db),
-        event_dispatcher: Arc::new(Mutex::new(event_dispatcher)),
+        event_dispatcher: Arc::new(event_dispatcher),
     };
     let context: DynContext = Arc::new(context);
 
