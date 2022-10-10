@@ -4,7 +4,6 @@ use common_error::AppError;
 use sea_orm::DatabaseConnection;
 use sea_orm::DatabaseTransaction;
 use sea_orm::TransactionTrait;
-use tokio::sync::Mutex;
 
 use crate::event::service::dto::EventDto;
 use crate::event::service::dto::SerializableEventDto;
@@ -14,13 +13,13 @@ pub type DynContext = Arc<dyn Context>;
 
 pub trait Context: Sync + Send {
     fn db_connection(&self) -> Arc<DatabaseConnection>;
-    fn event_dispatcher(&self) -> Arc<Mutex<EventDispatcher>>;
+    fn event_dispatcher(&self) -> Arc<EventDispatcher>;
 }
 
 #[derive(Clone)]
 pub struct ContextImpl {
     pub db: Arc<DatabaseConnection>,
-    pub(crate) event_dispatcher: Arc<Mutex<EventDispatcher>>,
+    pub(crate) event_dispatcher: Arc<EventDispatcher>,
 }
 
 impl Context for ContextImpl {
@@ -28,19 +27,19 @@ impl Context for ContextImpl {
         self.db.clone()
     }
 
-    fn event_dispatcher(&self) -> Arc<Mutex<EventDispatcher>> {
+    fn event_dispatcher(&self) -> Arc<EventDispatcher> {
         self.event_dispatcher.clone()
     }
 }
 
 pub struct TransactionalContext {
     db_transaction: DatabaseTransaction,
-    event_dispatcher: Arc<Mutex<EventDispatcher>>,
+    event_dispatcher: Arc<EventDispatcher>,
 }
 
 impl TransactionalContext {
     fn new(
-        event_dispatcher: Arc<Mutex<EventDispatcher>>,
+        event_dispatcher: Arc<EventDispatcher>,
         db_transaction: DatabaseTransaction,
     ) -> TransactionalContext {
         TransactionalContext {
@@ -65,7 +64,7 @@ impl TransactionalContext {
         &mut self,
         event: Box<dyn SerializableEventDto>,
     ) -> Result<Vec<EventDto>, AppError> {
-        self.event_dispatcher.lock().await.dispatch(event).await
+        self.event_dispatcher.dispatch(event).await
     }
 }
 

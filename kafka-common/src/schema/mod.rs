@@ -1,12 +1,12 @@
-use avro_rs::Schema;
-use avro_rs::Writer;
+use apache_avro::Schema;
+use apache_avro::Writer;
 use schema_registry_converter::avro_common::DecodeResult;
 use serde::Deserialize;
 use serde::Serialize;
 
 pub fn deserialize<'a, T: Deserialize<'a>>(
     decode_result: &'a DecodeResult,
-) -> Result<T, avro_rs::Error> {
+) -> Result<T, apache_avro::Error> {
     match decode_result.name.clone() {
         Some(name) => {
             if name.name != "user" {
@@ -19,10 +19,10 @@ pub fn deserialize<'a, T: Deserialize<'a>>(
         _ => panic!("Unknown type cannot be decoded."),
     };
 
-    avro_rs::from_value::<T>(&decode_result.value)
+    apache_avro::from_value::<T>(&decode_result.value)
 }
 
-pub fn serialize<T: Serialize>(schema: &Schema, value: T) -> Result<Vec<u8>, avro_rs::Error> {
+pub fn serialize<T: Serialize>(schema: &Schema, value: T) -> Result<Vec<u8>, apache_avro::Error> {
     let mut writer = Writer::new(schema, Vec::new());
     writer.append_ser(value)?;
     writer.into_inner()

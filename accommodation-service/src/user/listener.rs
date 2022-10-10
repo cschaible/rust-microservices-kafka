@@ -31,7 +31,7 @@ pub async fn listen(
     stream_consumer: &StreamConsumer,
     tracing_propagator: Arc<Propagator>,
 ) {
-    let decoder_mutex = context.avro_decoder().clone();
+    let decoder = context.avro_decoder().clone();
 
     loop {
         match stream_consumer.recv().await {
@@ -52,13 +52,12 @@ pub async fn listen(
                         "Message from wrong topic detected. Stopped processing."
                     );
 
-                    let mut decoder = decoder_mutex.lock().await;
                     let key_result = decoder
                         .decode(message.key())
                         .await
                         .expect("Couldn't decode avro message");
 
-                    let key = avro_rs::from_value::<KeyAvro>(&key_result.value)
+                    let key = apache_avro::from_value::<KeyAvro>(&key_result.value)
                         .expect("Couldn't deserialize KeyAvro");
 
                     let payload_result = decoder
@@ -66,7 +65,7 @@ pub async fn listen(
                         .await
                         .expect("Couldn't decode payload");
 
-                    let payload = avro_rs::from_value::<CreateUserAvro>(&payload_result.value)
+                    let payload = apache_avro::from_value::<CreateUserAvro>(&payload_result.value)
                         .expect("Couldn't deserialize CreateUserAvro");
 
                     debug!(

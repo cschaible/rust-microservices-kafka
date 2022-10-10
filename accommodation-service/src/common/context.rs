@@ -4,7 +4,6 @@ use common_error::AppError;
 use mongodb::error::UNKNOWN_TRANSACTION_COMMIT_RESULT;
 use mongodb::Client;
 use mongodb::ClientSession;
-use tokio::sync::Mutex;
 
 use crate::common::kafka::RecordDecoder;
 use crate::event::service::dto::EventDto;
@@ -14,20 +13,20 @@ use crate::event::service::event_dispatcher::EventDispatcher;
 pub type DynContext = Arc<dyn Context>;
 
 pub trait Context: Sync + Send {
-    fn avro_decoder(&self) -> Arc<Mutex<dyn RecordDecoder>>;
+    fn avro_decoder(&self) -> Arc<dyn RecordDecoder>;
     fn db_client(&self) -> Arc<Client>;
-    fn event_dispatcher(&self) -> Arc<Mutex<EventDispatcher>>;
+    fn event_dispatcher(&self) -> Arc<EventDispatcher>;
 }
 
 #[derive(Clone)]
 pub struct ContextImpl {
-    pub avro_decoder: Arc<Mutex<dyn RecordDecoder>>,
+    pub avro_decoder: Arc<dyn RecordDecoder>,
     pub client: Arc<Client>,
-    pub event_dispatcher: Arc<Mutex<EventDispatcher>>,
+    pub event_dispatcher: Arc<EventDispatcher>,
 }
 
 impl Context for ContextImpl {
-    fn avro_decoder(&self) -> Arc<Mutex<dyn RecordDecoder>> {
+    fn avro_decoder(&self) -> Arc<dyn RecordDecoder> {
         self.avro_decoder.clone()
     }
 
@@ -35,7 +34,7 @@ impl Context for ContextImpl {
         self.client.clone()
     }
 
-    fn event_dispatcher(&self) -> Arc<Mutex<EventDispatcher>> {
+    fn event_dispatcher(&self) -> Arc<EventDispatcher> {
         self.event_dispatcher.clone()
     }
 }
@@ -43,12 +42,12 @@ impl Context for ContextImpl {
 pub struct TransactionalContext {
     client: Arc<Client>,
     db_session: ClientSession,
-    event_dispatcher: Arc<Mutex<EventDispatcher>>,
+    event_dispatcher: Arc<EventDispatcher>,
 }
 
 impl TransactionalContext {
     fn new(
-        event_dispatcher: Arc<Mutex<EventDispatcher>>,
+        event_dispatcher: Arc<EventDispatcher>,
         db_session: ClientSession,
         client: Arc<Client>,
     ) -> TransactionalContext {
@@ -79,15 +78,11 @@ impl TransactionalContext {
     }
 
     pub async fn dispatch_events(
-        &mut self,
+        &self,
         event_type: String,
         event: Box<dyn SerializableEventDto>,
     ) -> Result<Vec<EventDto>, AppError> {
-        self.event_dispatcher
-            .lock()
-            .await
-            .dispatch(event_type, event)
-            .await
+        self.event_dispatcher.dispatch(event_type, event).await
     }
 }
 

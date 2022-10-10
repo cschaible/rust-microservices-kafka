@@ -13,7 +13,6 @@ use common::kafka::resolve_sr_settings;
 use dotenv::dotenv;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
-use tokio::sync::Mutex;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
 use tracing_common::init_tracing;
@@ -74,11 +73,11 @@ async fn main() {
     };
 
     // Construct avro decoder
-    let avro_decoder = Mutex::new(get_avro_decoder(&sr_settings));
+    let avro_decoder = get_avro_decoder(&sr_settings);
     let avro_record_decoder = AvroRecordDecoder { avro_decoder };
 
     // Construct avro encoder, converter and dispatcher
-    let avro_encoder = Arc::new(Mutex::new(get_avro_encoder(&sr_settings)));
+    let avro_encoder = Arc::new(get_avro_encoder(&sr_settings));
 
     // Accommodation
     let accommodation_encoder = AccommodationEventEncoder::new(
@@ -86,8 +85,8 @@ async fn main() {
         accommodation_topic_configuration.clone(),
     );
 
-    let accommodation_event_converter: Arc<Mutex<DynEventConverter>> =
-        Arc::new(Mutex::new(Box::new(accommodation_encoder)));
+    let accommodation_event_converter: Arc<DynEventConverter> =
+        Arc::new(Box::new(accommodation_encoder));
 
     // Room-type
     let room_type_encoder = RoomTypeEventEncoder::new(
@@ -95,8 +94,7 @@ async fn main() {
         accommodation_topic_configuration.clone(),
     );
 
-    let room_type_event_converter: Arc<Mutex<DynEventConverter>> =
-        Arc::new(Mutex::new(Box::new(room_type_encoder)));
+    let room_type_event_converter: Arc<DynEventConverter> = Arc::new(Box::new(room_type_encoder));
 
     let event_dispatcher = EventDispatcher {
         event_converters: vec![accommodation_event_converter, room_type_event_converter],
@@ -108,9 +106,9 @@ async fn main() {
 
     // Construct request context
     let context = ContextImpl {
-        avro_decoder: Arc::new(Mutex::new(avro_record_decoder)),
+        avro_decoder: Arc::new(avro_record_decoder),
         client: Arc::new(db_client),
-        event_dispatcher: Arc::new(Mutex::new(event_dispatcher)),
+        event_dispatcher: Arc::new(event_dispatcher),
     };
     let context: DynContext = Arc::new(context);
 
