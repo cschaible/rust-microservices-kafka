@@ -5,17 +5,22 @@ use std::str::FromStr;
 use std::sync::atomic::AtomicI64;
 use std::time::Duration;
 
+use bson::doc;
 use common_error::AppError;
 use futures::Future;
 use mongodb::options::ClientOptions;
+use mongodb::options::IndexOptions;
 use mongodb::Client;
 use mongodb::Collection;
+use mongodb::IndexModel;
 use tracing::instrument;
 
 use super::context::commit_context;
 use super::context::rollback_context;
 use super::context::DynContext;
 use super::context::TransactionalContext;
+use crate::accommodation::model::Accommodation;
+use crate::accommodation::model::RoomType;
 
 pub static ID_GENERATOR: AtomicI64 = AtomicI64::new(0);
 
@@ -60,6 +65,85 @@ pub async fn init_db_client() -> anyhow::Result<Client> {
     // opt.default_database = Some(String::from("accommodation-service"));
 
     Ok(Client::with_options(opt)?)
+}
+
+pub async fn create_indexes(client: &Client) -> Result<(), AppError> {
+    let database = client.default_database().expect("No default db specified");
+
+    // Accommodation.id
+    let ix_accommodation_id = IndexModel::builder()
+        .keys(doc! {
+            "id": 1,
+        })
+        .options(
+            IndexOptions::builder()
+                .name(Some("ix_accommodation_id".to_string()))
+                .unique(true)
+                .build(),
+        )
+        .build();
+
+    database
+        .collection::<Accommodation>("accommodation")
+        .create_index(ix_accommodation_id, None)
+        .await?;
+
+    // Accommodation.name + Accommodation.address.country
+    let ix_accommodation_name_country = IndexModel::builder()
+        .keys(doc! {
+            "name": 1,
+            "address.country": 1
+        })
+        .options(
+            IndexOptions::builder()
+                .name(Some("ix_accommodation_name_country".to_string()))
+                .unique(false)
+                .build(),
+        )
+        .build();
+
+    database
+        .collection::<Accommodation>("accommodation")
+        .create_index(ix_accommodation_name_country, None)
+        .await?;
+
+    // RoomType.id
+    let ix_room_type_id = IndexModel::builder()
+        .keys(doc! {
+            "id": 1,
+        })
+        .options(
+            IndexOptions::builder()
+                .name(Some("ix_room_type_id".to_string()))
+                .unique(true)
+                .build(),
+        )
+        .build();
+
+    database
+        .collection::<RoomType>("room_type")
+        .create_index(ix_room_type_id, None)
+        .await?;
+
+    // RoomType.accommodation_id
+    let ix_room_type_accommodation_id = IndexModel::builder()
+        .keys(doc! {
+            "accommodation_id": 1,
+        })
+        .options(
+            IndexOptions::builder()
+                .name(Some("ix_room_type_accommodation_id".to_string()))
+                .unique(false)
+                .build(),
+        )
+        .build();
+
+    database
+        .collection::<RoomType>("room_type")
+        .create_index(ix_room_type_accommodation_id, None)
+        .await?;
+
+    Ok(())
 }
 
 // #[instrument(skip_all)]
