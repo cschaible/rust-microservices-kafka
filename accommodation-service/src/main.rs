@@ -21,6 +21,7 @@ use crate::accommodation::event::accommodation_converter::AccommodationEventEnco
 use crate::accommodation::event::room_type_converter::RoomTypeEventEncoder;
 use crate::common::api::health;
 use crate::common::context::ContextImpl;
+use crate::common::db::create_indexes;
 use crate::common::db::init_db_client;
 use crate::common::kafka::get_avro_decoder;
 use crate::common::kafka::init_consumer;
@@ -62,6 +63,11 @@ async fn main() {
     let db_client = init_db_client()
         .await
         .expect("DB client initialization failed");
+
+    // Create indexes
+    create_indexes(&db_client)
+        .await
+        .expect("Index creation failed");
 
     // Initialize schema registry client settings
     let sr_settings = resolve_sr_settings();
