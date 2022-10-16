@@ -16,7 +16,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    mem_limit: 512m
+    mem_limit: 1024m
 
   mongodb1:
     image: mongo:6.0.1
