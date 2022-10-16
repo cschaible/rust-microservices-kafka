@@ -17,20 +17,22 @@ use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
 use tracing::instrument;
 
 use super::model::phone_number::PhoneNumberTypeEnum;
-use super::service::dto::PhoneNumberDto;
-use super::service::dto::UserWithPhoneNumbersDto;
+use crate::common::kafka::TopicConfiguration;
 use crate::common::model::IsoCountryCodeEnum;
 use crate::event::service::dto::EventDto;
 use crate::event::service::dto::SerializableEventDto;
 use crate::event::EventConverter;
-use crate::event::TopicConfiguration;
+use crate::user::event::dto::UserWithPhoneNumbersDto;
+use crate::user::model::phone_number;
 
-impl From<PhoneNumberDto> for PhoneNumberAvro {
-    fn from(dto: PhoneNumberDto) -> Self {
+pub mod dto;
+
+impl From<phone_number::ActiveModel> for PhoneNumberAvro {
+    fn from(phone_number: phone_number::ActiveModel) -> Self {
         PhoneNumberAvro {
-            country_code: dto.country_code,
-            call_number: dto.call_number,
-            phone_number_type: match dto.phone_number_type {
+            country_code: phone_number.country_code.clone().unwrap(),
+            call_number: phone_number.call_number.clone().unwrap(),
+            phone_number_type: match phone_number.phone_number_type.unwrap() {
                 PhoneNumberTypeEnum::Business => PhoneNumberTypeEnumAvro::Business,
                 PhoneNumberTypeEnum::Home => PhoneNumberTypeEnumAvro::Home,
                 PhoneNumberTypeEnum::Mobile => PhoneNumberTypeEnumAvro::Mobile,
