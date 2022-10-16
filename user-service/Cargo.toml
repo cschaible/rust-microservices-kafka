@@ -24,14 +24,14 @@ kafka-schema-user = { path = "../kafka-schema-user" }
 opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.17.0", features = ["rt-tokio"] }
 schema_registry_converter = { git = "https://github.com/gklijs/schema_registry_converter", branch = "main", features = ["avro"] }
-sea-orm = { version = "0.9.2", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid" ], default-features = false }
-sea-orm-migration = { version = "0.9.2", features =["sqlx-postgres", "runtime-tokio-rustls"] }
-sea-query = { version = "0.26.3", features = ["derive", "backend-postgres", "with-chrono", "with-uuid" ], default-features = false }
+sea-orm = { version = "0.9.2", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false }
+sea-orm-migration = { version = "0.9.2", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
+sea-query = { version = "0.26.3", features = ["derive", "backend-postgres", "with-chrono", "with-uuid"], default-features = false }
 sea-schema = { version = "0.9.4", features = ["postgres", "discovery", "writer", "probe", "debug-print", "runtime-tokio-rustls"], default-features = false }
 serde = "1.0.136"
 serde_json = "1.0.79"
-tokio = { version = "1.17.0", features = ["full"]}
-tower = "0.4.12"
+tokio = { version = "1.17.0", features = ["full"] }
+tower = { version = "0.4.12", features = ["limit"] }
 tower-http = { version = "0.3.3", features = ["compression-full", "trace"] }
 tracing = "0.1"
 tracing-common = { path = "../tracing-common" }

@@ -9,8 +9,6 @@ use futures::Future;
 use sea_orm::ConnectOptions;
 use sea_orm::Database;
 use sea_orm::DatabaseConnection;
-use sea_orm::DatabaseTransaction;
-use sea_orm::TransactionTrait;
 use tracing::instrument;
 
 use super::context::commit_context;
@@ -74,27 +72,6 @@ pub async fn init_db_pool() -> DatabaseConnection {
 }
 
 #[instrument(skip_all)]
-pub async fn transactional<R, F>(context: DynContext, f: F) -> Result<R, AppError>
-where
-    R: 'static,
-    F: for<'c> Fn(
-        &'c DynContext,
-        &'c DatabaseTransaction,
-    ) -> Pin<Box<dyn Future<Output = Result<R, AppError>> + Send + 'c>>,
-{
-    let transaction = context.db_connection().as_ref().begin().await?;
-
-    let result = f(&context, &transaction).await;
-
-    if result.is_ok() {
-        commit_transaction(transaction).await?;
-    } else {
-        transaction.rollback().await?;
-    }
-    result
-}
-
-#[instrument(skip_all)]
 pub async fn transactional2<R, F>(context: DynContext, f: F) -> Result<R, AppError>
 where
     R: 'static,
@@ -112,11 +89,6 @@ where
         rollback_context(transactional_context).await?;
     }
     result
-}
-
-#[instrument(skip_all)]
-async fn commit_transaction(transaction: DatabaseTransaction) -> Result<(), AppError> {
-    Ok(transaction.commit().await?)
 }
 
 fn parse_variable<T>(variable: Result<String, VarError>, error_message: &str) -> T

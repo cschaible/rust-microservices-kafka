@@ -1,7 +1,9 @@
+use sea_orm::ActiveValue;
+use sea_orm::ActiveValue::NotSet;
 use serde::Deserialize;
 
+use crate::user::model::phone_number;
 use crate::user::model::phone_number::PhoneNumberTypeEnum;
-use crate::user::service::dto::CreatePhoneNumberDto;
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -11,12 +13,14 @@ pub struct CreatePhoneNumberResource {
     pub call_number: String,
 }
 
-impl From<CreatePhoneNumberResource> for CreatePhoneNumberDto {
+impl From<CreatePhoneNumberResource> for phone_number::ActiveModel {
     fn from(resource: CreatePhoneNumberResource) -> Self {
-        CreatePhoneNumberDto {
-            country_code: resource.country_code,
-            phone_number_type: resource.phone_number_type,
-            call_number: resource.call_number,
+        phone_number::ActiveModel {
+            id: NotSet,
+            user_id: NotSet,
+            country_code: ActiveValue::set(resource.country_code.clone()),
+            phone_number_type: ActiveValue::set(resource.phone_number_type.clone()),
+            call_number: ActiveValue::set(resource.call_number),
         }
     }
 }

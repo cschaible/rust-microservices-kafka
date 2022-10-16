@@ -3,8 +3,8 @@ use uuid::Uuid;
 
 use super::phone_number_resource::PhoneNumberResource;
 use crate::common::model::IsoCountryCodeEnum;
-use crate::user::service::dto::PhoneNumberDto;
-use crate::user::service::dto::UserDto;
+use crate::user::model::phone_number;
+use crate::user::model::user;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,20 +19,20 @@ pub struct UserResource {
     pub phone_numbers: Option<Vec<PhoneNumberResource>>,
 }
 
-impl From<(UserDto, Option<Vec<PhoneNumberDto>>)> for UserResource {
-    fn from(tuple: (UserDto, Option<Vec<PhoneNumberDto>>)) -> Self {
-        let dto = tuple.0;
-        let phone_number_resources: Option<Vec<PhoneNumberResource>> = tuple
+impl From<(user::Model, Option<Vec<phone_number::Model>>)> for UserResource {
+    fn from(tuple: (user::Model, Option<Vec<phone_number::Model>>)) -> Self {
+        let user = tuple.0;
+        let phone_numbers: Option<Vec<PhoneNumberResource>> = tuple
             .1
-            .map(|dtos| dtos.into_iter().map(|d| d.into()).collect());
+            .map(|phone_number| phone_number.into_iter().map(|n| n.into()).collect());
 
         UserResource {
-            identifier: dto.identifier,
-            version: dto.version,
-            name: dto.name,
-            email: dto.email,
-            country: dto.country,
-            phone_numbers: phone_number_resources,
+            identifier: user.identifier,
+            version: user.version,
+            name: user.name,
+            email: user.email,
+            country: user.country,
+            phone_numbers,
         }
     }
 }

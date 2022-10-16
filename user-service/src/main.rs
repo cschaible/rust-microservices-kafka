@@ -11,6 +11,7 @@ use common::kafka::resolve_sr_settings;
 use dotenv::dotenv;
 use migration::Migrator;
 use sea_orm_migration::MigratorTrait;
+use tower::limit::ConcurrencyLimitLayer;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
 use tracing_common::init_tracing;
@@ -18,11 +19,10 @@ use tracing_common::init_tracing;
 use crate::common::api::health;
 use crate::common::context::ContextImpl;
 use crate::common::db::init_db_pool;
+use crate::common::kafka::TopicConfiguration;
 use crate::common::server::shutdown_signal;
 use crate::event::service::event_dispatcher::EventDispatcher;
 use crate::event::DynEventConverter;
-use crate::event::TopicConfiguration;
-use crate::user::api::routing::UserRouteExt;
 use crate::user::event::UserDtoEventConverter;
 
 mod common;
@@ -87,11 +87,13 @@ async fn main() {
     let context: DynContext = Arc::new(context);
 
     // Configure routing. Configure separate router to not trace /health calls.
-    let app = Router::new()
-        .register_user_endpoints()
-        .route("/health", get(health))
+    let base_router = Router::new().route("/health", get(health));
+    let user_router = user::api::routing::init()
         .layer(opentelemetry_tracing_layer())
-        .layer(Extension(context))
+        .layer(ConcurrencyLimitLayer::new(10))
+        .layer(Extension(context));
+    let global_router = base_router
+        .merge(user_router)
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)));
 
     // Start server
@@ -99,7 +101,7 @@ async fn main() {
     tracing::info!("listening on {addr}");
 
     axum::Server::bind(&addr)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+        .serve(global_router.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();

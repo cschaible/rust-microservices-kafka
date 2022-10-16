@@ -5,6 +5,7 @@ use axum::Json;
 use common_error::AppError;
 use common_error::DbError;
 use futures::FutureExt;
+use sea_orm::ActiveValue;
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -12,12 +13,8 @@ use self::resources::response::build_user_resource;
 use self::resources::response::build_user_resource_page_from_page;
 use self::resources::response::build_user_resource_page_from_vec;
 use self::resources::response::build_user_resources;
-use super::service::dto::CreatePhoneNumberDto;
-use super::service::dto::UserWithPhoneNumbersDto;
 use super::service::phone_number_service;
 use crate::common::context::DynContext;
-use crate::common::context::TransactionalContext;
-use crate::common::db::transactional;
 use crate::common::db::transactional2;
 use crate::common::paging::Page;
 use crate::common::paging::PageParams;
@@ -25,7 +22,9 @@ use crate::event::service::dto::SerializableEventDto;
 use crate::event::service::event_service;
 use crate::user::api::resources::request::create_user_resource::CreateUserResource;
 use crate::user::api::resources::response::user_resource::UserResource;
-use crate::user::service::dto::CreateUserDto;
+use crate::user::event::dto::UserWithPhoneNumbersDto;
+use crate::user::model::phone_number;
+use crate::user::model::user;
 use crate::user::service::user_service;
 
 pub mod resources;
@@ -36,28 +35,29 @@ pub async fn create_user<'a>(
     Json(create_user_resource): Json<CreateUserResource>,
     Extension(context): Extension<DynContext>,
 ) -> Result<Json<UserResource>, AppError> {
-    transactional2(context, |tx_context: &mut TransactionalContext| {
-        let user_dto: CreateUserDto = create_user_resource.clone().into();
-        let phone_number_dtos: Option<Vec<CreatePhoneNumberDto>> =
+    transactional2(context, |tx| {
+        let mut user: user::ActiveModel = create_user_resource.clone().into();
+        let phone_numbers: Option<Vec<phone_number::ActiveModel>> =
             create_user_resource.clone().into();
 
         Box::pin(async move {
-            let user = user_service::create_user(tx_context, &user_dto).await?;
-            let phone_numbers = if let Some(phone_numbers) = phone_number_dtos {
-                phone_number_service::save(
-                    tx_context.db_connection(),
-                    user.identifier,
-                    phone_numbers,
-                )
-                .await?;
+            user.identifier = ActiveValue::set(Uuid::new_v4());
+            let user = user_service::create_user(tx, &user).await?;
 
-                Some(
-                    phone_number_service::find_all_by_user_identifier(
-                        tx_context.db_connection(),
-                        user.identifier,
-                    )
-                    .await?,
-                )
+            let phone_numbers = if let Some(numbers) = phone_numbers {
+                // Set references to user
+                let updated_numbers: Vec<phone_number::ActiveModel> = numbers
+                    .into_iter()
+                    .map(|mut n| {
+                        n.user_id = ActiveValue::set(user.id);
+                        n
+                    })
+                    .collect();
+
+                // Save phone numbers in database
+                phone_number_service::save(tx.db_connection(), updated_numbers.clone()).await?;
+
+                Some(updated_numbers)
             } else {
                 None
             };
@@ -67,14 +67,12 @@ pub async fn create_user<'a>(
                 phone_numbers,
             });
 
-            let events = tx_context.dispatch_events(dto).await?;
+            let events = tx.dispatch_events(dto).await?;
             for event in events {
-                event_service::save(tx_context, &event).await?;
+                event_service::save(tx, &event).await?;
             }
 
-            Ok(build_user_resource(tx_context.db_connection(), user)
-                .await?
-                .into())
+            Ok(build_user_resource(tx.db_connection(), user).await?.into())
         })
     })
     .await
@@ -85,11 +83,11 @@ pub async fn find_one_by_identifier(
     Path(identifier): Path<Uuid>,
     Extension(context): Extension<DynContext>,
 ) -> Result<Json<UserResource>, AppError> {
-    transactional(context, |_context, tx| {
+    transactional2(context, |tx| {
         Box::pin(async move {
-            match user_service::find_one_by_identifier(tx, identifier).await {
+            match user_service::find_one_by_identifier(tx.db_connection(), identifier).await {
                 Ok(found_user) => match found_user {
-                    Some(user) => Ok(build_user_resource(tx, user).await?.into()),
+                    Some(user) => Ok(build_user_resource(tx.db_connection(), user).await?.into()),
                     None => Err(AppError::DbError(DbError::NotFound)),
                 },
                 Err(e) => Err(e.into()),
@@ -104,19 +102,24 @@ pub async fn find_all(
     Query(page_params): Query<PageParams>,
     Extension(context): Extension<DynContext>,
 ) -> Result<Json<Page<UserResource>>, AppError> {
-    transactional(context, |_context, tx| {
+    transactional2(context, |tx| {
         let params = page_params.clone();
 
         Box::pin(async move {
             if let (Some(_page), Some(_page_size)) = (params.page, params.page_size) {
-                match user_service::find_all_paged(tx, params).await {
-                    Ok(users) => Ok(build_user_resource_page_from_page(tx, users).await?.into()),
+                match user_service::find_all_paged(tx.db_connection(), params).await {
+                    Ok(users) => Ok(
+                        build_user_resource_page_from_page(tx.db_connection(), users)
+                            .await?
+                            .into(),
+                    ),
                     Err(e) => Err(e.into()),
                 }
             } else {
-                match user_service::find_all(tx).await {
+                match user_service::find_all(tx.db_connection()).await {
                     Ok(users) => {
-                        let resource_page = build_user_resource_page_from_vec(tx, users).await?;
+                        let resource_page =
+                            build_user_resource_page_from_vec(tx.db_connection(), users).await?;
                         let json: Json<Page<UserResource>> = resource_page.into();
                         Ok(json)
                     }
@@ -133,12 +136,14 @@ pub async fn find_all_by_identifiers(
     Json(user_identifiers): Json<Vec<Uuid>>,
     Extension(context): Extension<DynContext>,
 ) -> Result<Json<Vec<UserResource>>, AppError> {
-    transactional(context, |_context, tx| {
+    transactional2(context, |tx| {
         let identifiers = user_identifiers.clone();
 
         async move {
-            match user_service::find_all_by_identifiers(tx, identifiers).await {
-                Ok(users) => Ok(build_user_resources(tx, users).await?.into()),
+            match user_service::find_all_by_identifiers(tx.db_connection(), identifiers).await {
+                Ok(users) => Ok(build_user_resources(tx.db_connection(), users)
+                    .await?
+                    .into()),
                 Err(e) => Err(e.into()),
             }
         }
