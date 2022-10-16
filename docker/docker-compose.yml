@@ -164,7 +164,7 @@ services:
     mem_limit: 512m
 
   jaeger:
-    image: jaegertracing/all-in-one:1.36
+    image: jaegertracing/all-in-one:1.38
     hostname: jaeger
     container_name: jaeger
     ports:
@@ -175,7 +175,5 @@ services:
       - "16687:16687"
     environment:
       SPAN_STORAGE_TYPE: 'badger'
-      BADGER_EPHEMERAL: 'true'
       BADGER_DIRECTORY_KEY: '/badger/key'
       BADGER_DIRECTORY_VALUE: '/badger/data'
-    mem_limit: 768m
