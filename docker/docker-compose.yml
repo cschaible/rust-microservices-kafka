@@ -1,7 +1,7 @@
 version: "2.1"
 services:
   postgresql:
-    image: postgres:14.4-alpine
+    image: postgres:15.0-alpine
     hostname: postgres
     container_name: postgres
     ports:
@@ -19,7 +19,7 @@ services:
     mem_limit: 1024m
 
   mongodb1:
-    image: mongo:6.0.1
+    image: mongo:6.0.2
     restart: always
     hostname: mongodb1
     container_name: mongodb1
@@ -34,7 +34,7 @@ services:
     mem_limit: 768m
 
   mongodb2:
-    image: mongo:6.0.1
+    image: mongo:6.0.2
     restart: always
     hostname: mongodb2
     container_name: mongodb2
@@ -49,7 +49,7 @@ services:
     mem_limit: 768m
 
   mongodb3:
-    image: mongo:6.0.1
+    image: mongo:6.0.2
     restart: always
     hostname: mongodb3
     container_name: mongodb3
@@ -64,7 +64,7 @@ services:
     mem_limit: 768m
 
   mongoinit:
-    image: mongo:6.0.1
+    image: mongo:6.0.2
     # Exit after executing the command
     restart: "no"
     hostname: minit
@@ -99,7 +99,7 @@ services:
     mem_limit: 256m
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.2.1
+    image: confluentinc/cp-zookeeper:7.2.2
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -110,7 +110,7 @@ services:
     mem_limit: 128m
     
   broker:
-    image: confluentinc/cp-kafka:7.2.1
+    image: confluentinc/cp-kafka:7.2.2
     hostname: broker
     container_name: broker
     ports:
@@ -133,7 +133,7 @@ services:
     mem_limit: 768m
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.2.1
+    image: confluentinc/cp-schema-registry:7.2.2
     hostname: schema-registry
     container_name: schema-registry
     depends_on:
