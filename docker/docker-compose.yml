@@ -146,22 +146,6 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
       EXTRA_ARGS: '-Xmx384m -Xms64m'
     mem_limit: 768m
-  
-  kafdrop:
-    image: obsidiandynamics/kafdrop:3.30.0
-    hostname: kafdrop
-    container_name: kafdrop
-    depends_on:
-      - broker
-      - schema-registry
-    ports:
-      - "9000:9000"
-    environment:
-      JVM_OPTS: "-Xms32M -Xmx256M"
-      KAFKA_BROKERCONNECT: "broker:29092"
-      SCHEMAREGISTRY_CONNECT: "http://schema-registry:8081"
-      SERVER_SERVLET_CONTEXTPATH: "/"
-    mem_limit: 512m
 
   jaeger:
     image: jaegertracing/all-in-one:1.38
