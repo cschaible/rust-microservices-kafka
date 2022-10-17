@@ -13,6 +13,7 @@ use common::kafka::resolve_sr_settings;
 use dotenv::dotenv;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
+use tower::limit::ConcurrencyLimitLayer;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
 use tracing_common::init_tracing;
@@ -26,10 +27,10 @@ use crate::common::db::init_db_client;
 use crate::common::kafka::get_avro_decoder;
 use crate::common::kafka::init_consumer;
 use crate::common::kafka::AvroRecordDecoder;
+use crate::common::kafka::TopicConfiguration;
 use crate::common::server::shutdown_signal;
 use crate::event::service::event_dispatcher::EventDispatcher;
 use crate::event::DynEventConverter;
-use crate::event::TopicConfiguration;
 use crate::user::listener::listen;
 
 mod accommodation;
@@ -106,10 +107,6 @@ async fn main() {
         event_converters: vec![accommodation_event_converter, room_type_event_converter],
     };
 
-    // Initialize tracing propagator
-    let propagator = Arc::new(Propagator::with_encoding(B3Encoding::SingleHeader));
-    let kafka_consumer = init_consumer();
-
     // Construct request context
     let context = ContextImpl {
         avro_decoder: Arc::new(avro_record_decoder),
@@ -118,6 +115,10 @@ async fn main() {
     };
     let context: DynContext = Arc::new(context);
 
+    // Initialize tracing propagator
+    let propagator = Arc::new(Propagator::with_encoding(B3Encoding::SingleHeader));
+    let kafka_consumer = init_consumer();
+
     // Construct kafka stream consumer
     let consumer_context = context.clone();
     let consumer_handle = tokio::spawn(async move {
@@ -125,16 +126,16 @@ async fn main() {
     });
 
     // Configure routing. Configure separate router to not trace /health calls.
-    let app = Router::new()
-        //.register_user_endpoints()
-        .route("/health", get(health))
-        .layer(opentelemetry_tracing_layer())
-        .layer(Extension(context.clone()))
-        .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)));
-    //.layer(GlobalConcurrencyLimitLayer::new(10));
+    let base_router = Router::new().route("/health", get(health));
 
-    let graphql_router = graphql::routing(context);
-    let global_router = app.merge(graphql_router);
+    let graphql_router = graphql::routing(context.clone())
+        .layer(opentelemetry_tracing_layer())
+        .layer(ConcurrencyLimitLayer::new(10));
+
+    let global_router = base_router
+        .merge(graphql_router)
+        .layer(Extension(context))
+        .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)));
 
     // Start server
     let addr = SocketAddr::from(([0, 0, 0, 0], 3005));

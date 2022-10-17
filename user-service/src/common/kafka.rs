@@ -1,6 +1,7 @@
 use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::async_impl::schema_registry::SrSettings;
 
+#[derive(Clone)]
 pub struct TopicConfiguration {
     pub topic: String,
     pub partitions: i32,

@@ -23,7 +23,7 @@ use crate::common::kafka::TopicConfiguration;
 use crate::common::server::shutdown_signal;
 use crate::event::service::event_dispatcher::EventDispatcher;
 use crate::event::DynEventConverter;
-use crate::user::event::UserDtoEventConverter;
+use crate::user::event::user_converter::UserEventEncoder;
 
 mod common;
 mod event;
@@ -58,9 +58,8 @@ async fn main() {
         }
     }
 
-    // Construct avro encoder
+    // Initialize schema registry client settings
     let sr_settings = resolve_sr_settings();
-    let avro_encoder = get_avro_encoder(&sr_settings);
 
     // Construct topic configuration
     let user_topic_configuration = TopicConfiguration {
@@ -68,11 +67,13 @@ async fn main() {
         partitions: 2,
     };
 
-    // Construct converter
-    let user_encoder = UserDtoEventConverter {
-        avro_encoder: Arc::new(avro_encoder),
-        topic_configuration: user_topic_configuration,
-    };
+    // Construct avro encoder, converter and dispatcher
+    let avro_encoder = Arc::new(get_avro_encoder(&sr_settings));
+
+    // User
+    let user_encoder =
+        UserEventEncoder::new(avro_encoder.clone(), user_topic_configuration.clone());
+
     let user_event_converter: Arc<DynEventConverter> = Arc::new(Box::new(user_encoder));
 
     let event_dispatcher = EventDispatcher {
@@ -88,12 +89,14 @@ async fn main() {
 
     // Configure routing. Configure separate router to not trace /health calls.
     let base_router = Router::new().route("/health", get(health));
+
     let user_router = user::api::routing::init()
         .layer(opentelemetry_tracing_layer())
-        .layer(ConcurrencyLimitLayer::new(10))
-        .layer(Extension(context));
+        .layer(ConcurrencyLimitLayer::new(10));
+
     let global_router = base_router
         .merge(user_router)
+        .layer(Extension(context))
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)));
 
     // Start server

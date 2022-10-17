@@ -2,7 +2,6 @@ use std::any::Any;
 
 /// Marker trait for convertibility to avro.
 pub trait SerializableEventDto: Send + Sync {
-    fn event_type(&self, event_type: String) -> String;
     fn as_any(&self) -> &dyn Any;
 }
 

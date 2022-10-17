@@ -16,10 +16,6 @@ use crate::common::model::IsoCountryCodeEnum;
 use crate::event::service::dto::SerializableEventDto;
 
 impl SerializableEventDto for Accommodation {
-    fn event_type(&self, event_type: String) -> String {
-        event_type
-    }
-
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -68,10 +64,6 @@ impl From<Accommodation> for UpdateAccommodationAvro {
 }
 
 impl SerializableEventDto for RoomType {
-    fn event_type(&self, event_type: String) -> String {
-        event_type
-    }
-
     fn as_any(&self) -> &dyn Any {
         self
     }

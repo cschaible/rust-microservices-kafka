@@ -3,35 +3,33 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use common_error::AppError;
 use kafka_common::partition_of;
-use kafka_schema_accommodation::schema_create_accommodation::CreateAccommodationAvro;
-use kafka_schema_accommodation::schema_create_accommodation::SCHEMA_NAME_CREATE_ACCOMMODATION;
-use kafka_schema_accommodation::schema_update_accommodation::UpdateAccommodationAvro;
-use kafka_schema_accommodation::schema_update_accommodation::SCHEMA_NAME_UPDATE_ACCOMMODATION;
-use kafka_schema_accommodation::DATA_TYPE_ACCOMMODATION;
 use kafka_schema_common::schema_key::KeyAvro;
 use kafka_schema_common::schema_key::SCHEMA_NAME_KEY;
 use kafka_schema_common::IdentifierAvro;
+use kafka_schema_user::schema_create_user::CreateUserAvro;
+use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
+use kafka_schema_user::DATA_TYPE_USER;
 use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
 use tracing::instrument;
 
-use crate::accommodation::model::Accommodation;
 use crate::common::kafka::TopicConfiguration;
 use crate::event::service::dto::EventDto;
 use crate::event::service::dto::SerializableEventDto;
 use crate::event::EventConverter;
+use crate::user::event::dto::UserWithPhoneNumbersDto;
 
-pub struct AccommodationEventEncoder<'a> {
+pub struct UserEventEncoder<'a> {
     pub(crate) avro_encoder: Arc<AvroEncoder<'a>>,
     pub(crate) topic_configuration: TopicConfiguration,
 }
 
-impl<'a> AccommodationEventEncoder<'a> {
+impl<'a> UserEventEncoder<'a> {
     pub fn new(
         avro_encoder: Arc<AvroEncoder>,
         topic_configuration: TopicConfiguration,
-    ) -> AccommodationEventEncoder {
-        AccommodationEventEncoder {
+    ) -> UserEventEncoder {
+        UserEventEncoder {
             avro_encoder,
             topic_configuration,
         }
@@ -39,45 +37,38 @@ impl<'a> AccommodationEventEncoder<'a> {
 }
 
 #[async_trait]
-impl<'a> EventConverter for AccommodationEventEncoder<'a> {
+impl<'a> EventConverter for UserEventEncoder<'a> {
     fn handles(&self, event_type: String) -> bool {
-        matches!(
-            event_type.as_str(),
-            SCHEMA_NAME_CREATE_ACCOMMODATION | SCHEMA_NAME_UPDATE_ACCOMMODATION
-        )
+        matches!(event_type.as_str(), SCHEMA_NAME_CREATE_USER)
     }
 
-    #[instrument(name = "create_accommodation_event_converter.handle", skip_all)]
+    #[instrument(name = "user_event_converter.handle", skip_all)]
     async fn handle(
         &self,
         event_type: String,
         event: &Box<dyn SerializableEventDto>,
     ) -> Result<EventDto, AppError> {
-        let accommodation_event = event
+        let user_event = event
             .as_any()
-            .downcast_ref::<Accommodation>()
+            .downcast_ref::<UserWithPhoneNumbersDto>()
             .unwrap_or_else(|| panic!("Unexpected event type detected: {}", event_type));
 
         // Determine kafka partition
-        let partition = partition_of(accommodation_event.id, self.topic_configuration.partitions)
-            .expect("Invalid partition number detected");
+        let partition = partition_of(
+            user_event.user.identifier,
+            self.topic_configuration.partitions,
+        )
+        .expect("Invalid partition number detected");
 
         // Get topic
         let topic = self.topic_configuration.topic.clone();
 
         // Serialize value
         let value_sns = SubjectNameStrategy::RecordNameStrategy(event_type.clone());
-        let serialized_value: Vec<u8> = if event_type == *SCHEMA_NAME_CREATE_ACCOMMODATION {
-            let create_accommodation_avro: CreateAccommodationAvro =
-                accommodation_event.clone().into();
+        let serialized_value: Vec<u8> = if event_type == *SCHEMA_NAME_CREATE_USER {
+            let create_user_avro: CreateUserAvro = user_event.clone().into();
             self.avro_encoder
-                .encode_struct(create_accommodation_avro, &value_sns)
-                .await?
-        } else if event_type == *SCHEMA_NAME_UPDATE_ACCOMMODATION {
-            let update_accommodation_avro: UpdateAccommodationAvro =
-                accommodation_event.clone().into();
-            self.avro_encoder
-                .encode_struct(update_accommodation_avro, &value_sns)
+                .encode_struct(create_user_avro, &value_sns)
                 .await?
         } else {
             panic!("Unhandled event type: {:?}", event_type);
@@ -85,11 +76,11 @@ impl<'a> EventConverter for AccommodationEventEncoder<'a> {
 
         // Serialize key
         let key_avro = KeyAvro {
-            context_identifier: format!("{}", accommodation_event.id),
+            context_identifier: format!("{}", user_event.user.identifier),
             identifier: IdentifierAvro {
-                data_type: DATA_TYPE_ACCOMMODATION.to_owned(),
-                identifier: format!("{}", accommodation_event.id),
-                version: accommodation_event.version,
+                data_type: DATA_TYPE_USER.to_owned(),
+                identifier: format!("{}", user_event.user.identifier),
+                version: user_event.user.version,
             },
         };
         let key_sns = SubjectNameStrategy::RecordNameStrategy(SCHEMA_NAME_KEY.to_string());

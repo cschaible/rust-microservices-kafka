@@ -11,12 +11,16 @@ pub type DynEventConverter = Box<dyn EventConverter>;
 
 #[async_trait]
 pub trait EventConverter: Sync + Send {
-    fn event_type(&self) -> String;
+    fn handles(&self, event_type: String) -> bool;
 
     #[allow(clippy::borrowed_box)]
-    async fn handle(&self, event: &Box<dyn SerializableEventDto>) -> Result<EventDto, AppError>;
+    async fn handle(
+        &self,
+        event_type: String,
+        event: &Box<dyn SerializableEventDto>,
+    ) -> Result<EventDto, AppError>;
 }
 
 pub fn handles(converter: &DynEventConverter, event_type: String) -> bool {
-    converter.event_type() == event_type
+    converter.handles(event_type)
 }

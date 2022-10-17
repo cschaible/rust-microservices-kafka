@@ -20,7 +20,6 @@ impl EventDispatcher {
         event: Box<dyn SerializableEventDto>,
     ) -> Result<Vec<EventDto>, AppError> {
         let mut dtos: Vec<EventDto> = Vec::new();
-        let event_type = event.event_type(event_type).clone();
 
         let mut handled = false;
         for converter in self.event_converters.clone().into_iter() {

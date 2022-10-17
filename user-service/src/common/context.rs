@@ -61,10 +61,11 @@ impl TransactionalContext {
     }
 
     pub async fn dispatch_events(
-        &mut self,
+        &self,
+        event_type: String,
         event: Box<dyn SerializableEventDto>,
     ) -> Result<Vec<EventDto>, AppError> {
-        self.event_dispatcher.dispatch(event).await
+        self.event_dispatcher.dispatch(event_type, event).await
     }
 }
 
