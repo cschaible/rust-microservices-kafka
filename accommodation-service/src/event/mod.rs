@@ -24,9 +24,3 @@ pub trait EventConverter: Sync + Send {
 pub fn handles(converter: &DynEventConverter, event_type: String) -> bool {
     converter.handles(event_type)
 }
-
-#[derive(Clone)]
-pub struct TopicConfiguration {
-    pub topic: String,
-    pub partitions: i32,
-}

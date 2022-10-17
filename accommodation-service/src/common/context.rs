@@ -69,10 +69,6 @@ impl TransactionalContext {
         Ok(transactional_context)
     }
 
-    // pub fn db_session(&mut self) -> &mut ClientSession {
-    // &mut self.db_session
-    // }
-
     pub fn db_client(&self) -> Arc<Client> {
         self.client.clone()
     }

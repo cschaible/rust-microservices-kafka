@@ -5,6 +5,7 @@ use axum::Json;
 use common_error::AppError;
 use common_error::DbError;
 use futures::FutureExt;
+use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
 use sea_orm::ActiveValue;
 use tracing::instrument;
 use uuid::Uuid;
@@ -15,6 +16,7 @@ use self::resources::response::build_user_resource_page_from_vec;
 use self::resources::response::build_user_resources;
 use super::service::phone_number_service;
 use crate::common::context::DynContext;
+use crate::common::context::TransactionalContext;
 use crate::common::db::transactional2;
 use crate::common::paging::Page;
 use crate::common::paging::PageParams;
@@ -67,10 +69,8 @@ pub async fn create_user<'a>(
                 phone_numbers,
             });
 
-            let events = tx.dispatch_events(dto).await?;
-            for event in events {
-                event_service::save(tx, &event).await?;
-            }
+            // Create kafka events
+            create_kafka_events(tx, dto, SCHEMA_NAME_CREATE_USER).await?;
 
             Ok(build_user_resource(tx.db_connection(), user).await?.into())
         })
@@ -150,4 +150,19 @@ pub async fn find_all_by_identifiers(
         .boxed()
     })
     .await
+}
+
+async fn create_kafka_events(
+    tx: &mut TransactionalContext,
+    dto: Box<dyn SerializableEventDto>,
+    event_type: &str,
+) -> Result<(), AppError> {
+    let events = tx.dispatch_events(event_type.to_string(), dto).await?;
+
+    assert!(!events.is_empty());
+
+    for event in events {
+        event_service::save(tx, &event).await?;
+    }
+    Ok(())
 }
