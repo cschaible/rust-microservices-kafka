@@ -1,8 +1,9 @@
+use mongodb::bson::oid::ObjectId;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 pub struct Event {
-    pub id: i64,
+    pub _id: ObjectId,
     pub topic: String,
     pub partition: i32,
     #[serde(with = "serde_bytes")]

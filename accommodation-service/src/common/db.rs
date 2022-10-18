@@ -2,7 +2,6 @@ use std::env::VarError;
 use std::fmt::Debug;
 use std::pin::Pin;
 use std::str::FromStr;
-use std::sync::atomic::AtomicI64;
 use std::time::Duration;
 
 use bson::doc;
@@ -21,8 +20,6 @@ use super::context::DynContext;
 use super::context::TransactionalContext;
 use crate::accommodation::model::Accommodation;
 use crate::accommodation::model::RoomType;
-
-pub static ID_GENERATOR: AtomicI64 = AtomicI64::new(0);
 
 pub async fn init_db_client() -> anyhow::Result<Client> {
     let connection_string = std::env::var("DATABASE_CONNECTION_STRING")
