@@ -1,5 +1,3 @@
-use std::sync::atomic::Ordering;
-
 use common_error::AppError;
 use mongodb::options::InsertOneOptions;
 use tracing::instrument;
@@ -7,7 +5,6 @@ use tracing_common::get_b3_trace_id;
 
 use super::dto::EventDto;
 use crate::common::context::TransactionalContext;
-use crate::common::db::ID_GENERATOR;
 use crate::event::model::event::Model;
 
 #[instrument(name = "event.service.save", skip_all)]
@@ -18,7 +15,6 @@ pub async fn save(tx_context: &TransactionalContext, event: &EventDto) -> Result
 
     // Build the entity from dto
     let e = Model {
-        id: ID_GENERATOR.fetch_add(1, Ordering::SeqCst),
         key: event.key.clone(),
         payload: event.payload.clone(),
         partition: event.partition,

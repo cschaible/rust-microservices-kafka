@@ -6,7 +6,7 @@ use common_error::AppError;
 use futures::future;
 use futures::TryStreamExt;
 use mongodb::bson::doc;
-use mongodb::bson::Bson;
+use mongodb::bson::oid::ObjectId;
 use mongodb::options::DeleteOptions;
 use mongodb::options::FindOptions;
 use opentelemetry_propagator_b3::propagator::Propagator;
@@ -54,15 +54,15 @@ pub async fn delete_from_db(
     tx_context: &mut TransactionalContext,
     events: &EventList,
 ) -> Result<(), AppError> {
-    let event_ids: Vec<Bson> = events
+    let event_ids: Vec<ObjectId> = events
         .events
         .iter()
         .take(MAX_PAGE_SIZE)
-        .map(|e| Bson::Int64(e.id))
+        .map(|e| e._id)
         .collect();
 
     let filter = doc! {
-        "id": { "$in" : event_ids }
+        "_id": { "$in" : event_ids }
     };
 
     get_collection::<Event>(tx_context, "event")
@@ -82,7 +82,7 @@ pub async fn send_to_kafka(
     let number_of_events = events_to_send.len();
 
     if number_of_events > 0 {
-        let mut event_ids: Vec<i64> = Vec::new();
+        let mut event_ids: Vec<ObjectId> = Vec::new();
 
         info!("Sending {} events", number_of_events);
 
@@ -123,7 +123,7 @@ pub async fn send_to_kafka(
                 .instrument(span);
 
             // delivery_result.into_inner().expect("Couldn't send event");
-            event_ids.push(event.id);
+            event_ids.push(event._id);
 
             delivery_result
         }))
