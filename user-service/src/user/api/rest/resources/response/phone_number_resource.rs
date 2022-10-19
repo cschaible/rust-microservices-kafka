@@ -1,7 +1,7 @@
 use serde::Serialize;
 
-use crate::user::model::phone_number;
 use crate::user::model::phone_number::PhoneNumberTypeEnum;
+use crate::user::model::projections::PhoneNumberUserIdentifierProjection;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -11,8 +11,8 @@ pub struct PhoneNumberResource {
     pub call_number: String,
 }
 
-impl From<phone_number::Model> for PhoneNumberResource {
-    fn from(p: phone_number::Model) -> Self {
+impl From<PhoneNumberUserIdentifierProjection> for PhoneNumberResource {
+    fn from(p: PhoneNumberUserIdentifierProjection) -> Self {
         PhoneNumberResource {
             country_code: p.country_code,
             phone_number_type: p.phone_number_type,

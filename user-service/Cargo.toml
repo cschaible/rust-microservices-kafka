@@ -10,6 +10,8 @@ license = "MIT"
 anyhow = "1.0"
 apache-avro = "0.14.0"
 async-trait = "0.1.52"
+async-graphql = { version = "4.0.12", features = ["dataloader", "opentelemetry", "tracing", "uuid", "tracing-futures"] }
+async-graphql-axum = "4.0.12"
 axum = "0.5.0"
 axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
 chrono = "0.4.19"

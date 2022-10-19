@@ -1,9 +1,10 @@
 use anyhow::Result;
+use projections::PhoneNumberUserIdentifierProjection;
 use sea_orm::ConnectionTrait;
 
 use self::user_resource::UserResource;
 use crate::common::paging::Page;
-use crate::user::model::phone_number;
+use crate::user::model::projections;
 use crate::user::model::user;
 use crate::user::service::phone_number_service;
 
@@ -70,8 +71,10 @@ async fn build_resources<T: ConnectionTrait + Sized>(
         .into_iter()
         .map(|u| {
             // Get the phone numbers of the user from the map
-            let phone_numbers: Option<Vec<phone_number::Model>> =
-                phone_numbers_by_user_id.get(&u.id).map(|p| p.to_owned());
+            let phone_numbers: Option<Vec<PhoneNumberUserIdentifierProjection>> =
+                phone_numbers_by_user_id
+                    .get(&u.identifier)
+                    .map(|p| p.to_owned());
 
             // Convert the user and the phone_numbers into a resource
             (u, phone_numbers).into()

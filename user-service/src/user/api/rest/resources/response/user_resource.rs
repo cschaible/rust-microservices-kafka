@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use super::phone_number_resource::PhoneNumberResource;
 use crate::common::model::IsoCountryCodeEnum;
-use crate::user::model::phone_number;
+use crate::user::model::projections::PhoneNumberUserIdentifierProjection;
 use crate::user::model::user;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -19,8 +19,18 @@ pub struct UserResource {
     pub phone_numbers: Option<Vec<PhoneNumberResource>>,
 }
 
-impl From<(user::Model, Option<Vec<phone_number::Model>>)> for UserResource {
-    fn from(tuple: (user::Model, Option<Vec<phone_number::Model>>)) -> Self {
+impl
+    From<(
+        user::Model,
+        Option<Vec<PhoneNumberUserIdentifierProjection>>,
+    )> for UserResource
+{
+    fn from(
+        tuple: (
+            user::Model,
+            Option<Vec<PhoneNumberUserIdentifierProjection>>,
+        ),
+    ) -> Self {
         let user = tuple.0;
         let phone_numbers: Option<Vec<PhoneNumberResource>> = tuple
             .1
