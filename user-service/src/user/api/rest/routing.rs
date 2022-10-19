@@ -2,10 +2,10 @@ use axum::routing::get;
 use axum::routing::post;
 use axum::Router;
 
-use super::create_user;
-use super::find_all;
-use super::find_all_by_identifiers;
-use super::find_one_by_identifier;
+use crate::user::api::rest::endpoints::create_user;
+use crate::user::api::rest::endpoints::find_all;
+use crate::user::api::rest::endpoints::find_all_by_identifiers;
+use crate::user::api::rest::endpoints::find_one_by_identifier;
 
 pub fn init() -> Router {
     Router::new()

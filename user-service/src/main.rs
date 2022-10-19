@@ -27,6 +27,7 @@ use crate::user::event::user_converter::UserEventEncoder;
 
 mod common;
 mod event;
+mod graphql;
 mod migration;
 mod user;
 
@@ -90,12 +91,17 @@ async fn main() {
     // Configure routing. Configure separate router to not trace /health calls.
     let base_router = Router::new().route("/health", get(health));
 
-    let user_router = user::api::routing::init()
+    let user_rest_router = user::api::rest::routing::init()
+        .layer(opentelemetry_tracing_layer())
+        .layer(ConcurrencyLimitLayer::new(10));
+
+    let graphql_router = graphql::routing(context.clone())
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
     let global_router = base_router
-        .merge(user_router)
+        .merge(user_rest_router)
+        .merge(graphql_router)
         .layer(Extension(context))
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)));
 
