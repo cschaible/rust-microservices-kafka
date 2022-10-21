@@ -1,0 +1,13 @@
+database:
+  url: postgres://demouser:secret@localhost:5432/demo
+
+kafka:
+  broker:
+    urls: localhost:9092
+  schema_registry:
+    url: http://localhost:8081
+  topic:
+    mappings:
+      - id: user
+        topic_name: user
+        partitions: 2

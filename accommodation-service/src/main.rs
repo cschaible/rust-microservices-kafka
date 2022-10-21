@@ -10,13 +10,14 @@ use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
 use common::kafka::get_avro_encoder;
 use common::kafka::resolve_sr_settings;
+use common_error::AppError;
 use dotenv::dotenv;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use tower::limit::ConcurrencyLimitLayer;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
-use tracing_common::init_tracing;
+use tracing_common::initialize_logging_and_tracing;
 
 use crate::accommodation::event::accommodation_converter::AccommodationEventEncoder;
 use crate::accommodation::event::room_type_converter::RoomTypeEventEncoder;
@@ -40,14 +41,14 @@ mod graphql;
 mod user;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), AppError> {
     // Initialize from .env file
     dotenv().ok();
 
     // TODO: https://github.com/mehcode/config-rs
 
     // Initialize logging and tracing
-    init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
+    initialize_logging_and_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
         e // .add_directive("async_graphql::graphql=info".parse().unwrap_or_default())
             .add_directive(
                 format!(
@@ -58,7 +59,7 @@ async fn main() {
                 .unwrap_or_default(),
             )
         //.add_directive("rdkafka=trace".parse().unwrap_or_default())
-    });
+    })?;
 
     // Initialize db client
     let db_client = init_db_client()
@@ -148,4 +149,6 @@ async fn main() {
         .unwrap();
 
     opentelemetry::global::shutdown_tracer_provider();
+
+    Ok(())
 }

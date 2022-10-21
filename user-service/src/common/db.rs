@@ -1,7 +1,4 @@
-use std::env::VarError;
-use std::fmt::Debug;
 use std::pin::Pin;
-use std::str::FromStr;
 use std::time::Duration;
 
 use common_error::AppError;
@@ -9,66 +6,65 @@ use futures::Future;
 use sea_orm::ConnectOptions;
 use sea_orm::Database;
 use sea_orm::DatabaseConnection;
+use sea_orm_migration::MigratorTrait;
 use tracing::instrument;
 
 use super::context::commit_context;
 use super::context::rollback_context;
 use super::context::DynContext;
 use super::context::TransactionalContext;
+use crate::config::configuration::DatabaseConfiguration;
+use crate::Migrator;
 
-pub async fn init_db_pool() -> DatabaseConnection {
-    let url = std::env::var("DATABASE_URL").expect("Environment variable 'DATABASE_URL' not set");
-    let max_connections = std::env::var("DATABASE_MAX_CONNECTIONS");
-    let min_connections = std::env::var("DATABASE_MIN_CONNECTIONS");
-    let connect_timeout = std::env::var("DATABASE_CONNECT_TIMEOUT");
-    let idle_timeout = std::env::var("DATABASE_IDLE_TIMEOUT");
-    let max_lifetime = std::env::var("DATABASE_MAX_LIFETIME");
-    let logging = std::env::var("DATABASE_LOGGING");
+pub async fn init_pool(config: &DatabaseConfiguration) -> Result<DatabaseConnection, AppError> {
+    let mut opt = ConnectOptions::new(config.url.clone());
 
-    let mut opt = ConnectOptions::new(url.to_owned());
+    // Configure pool
 
-    if max_connections.is_ok() {
-        opt.max_connections(parse_variable(
-            max_connections,
-            "Invalid max connection count provided",
-        ));
+    if let Some(max) = config.connection.pool.max {
+        opt.max_connections(max);
     }
 
-    if min_connections.is_ok() {
-        opt.min_connections(parse_variable(
-            min_connections,
-            "Invalid min connection count provided",
-        ));
+    if let Some(min) = config.connection.pool.min {
+        opt.max_connections(min);
     }
 
-    if logging.is_ok() {
-        opt.sqlx_logging(parse_variable(logging, "Invalid logging flag provided"));
+    // Configure SQLx Logging
+
+    if let Some(logging_enabled) = config.logging.enabled {
+        opt.sqlx_logging(logging_enabled);
     }
 
-    if connect_timeout.is_ok() {
-        opt.connect_timeout(Duration::from_secs(parse_variable(
-            connect_timeout,
-            "Invalid connect timeout value provided",
-        )));
+    // Configure timeouts
+
+    if let Some(connect_timeout) = config.connection.connect_timeout {
+        opt.connect_timeout(Duration::from_secs(connect_timeout));
     }
 
-    if idle_timeout.is_ok() {
-        opt.idle_timeout(Duration::from_secs(parse_variable(
-            idle_timeout,
-            "Invalid idle timeout value provided",
-        )));
+    if let Some(idle_timeout) = config.connection.idle_timeout {
+        opt.connect_timeout(Duration::from_secs(idle_timeout));
     }
 
-    if max_lifetime.is_ok() {
-        opt.max_lifetime(Duration::from_secs(parse_variable(
-            max_lifetime,
-            "Invalid max lifetime value provided",
-        )));
+    if let Some(max_lifetime) = config.connection.max_lifetime {
+        opt.connect_timeout(Duration::from_secs(max_lifetime));
     }
 
-    Database::connect(opt)
-        .await
-        .expect("Establishing database connection failed")
+    // Create pool
+
+    Ok(Database::connect(opt).await?)
+}
+
+pub async fn migrate(connection: &DatabaseConnection) -> Result<(), AppError> {
+    match Migrator::up(connection, None).await {
+        Ok(_) => {
+            tracing::debug!("Finished migration steps");
+            Ok(())
+        }
+        Err(e) => {
+            tracing::error!("Failed to apply migration: {:?}", e);
+            Err(AppError::RelDbUnhandledDbError(e))
+        }
+    }
 }
 
 #[instrument(skip_all)]
@@ -79,22 +75,19 @@ where
         &'c mut TransactionalContext,
     ) -> Pin<Box<dyn Future<Output = Result<R, AppError>> + Send + 'c>>,
 {
+    // Initialize transactional context and start transaction
     let mut transactional_context = TransactionalContext::from_context(&context).await?;
 
+    // Invoke closure with transactional context
     let result = f(&mut transactional_context).await;
 
+    // Commit or rollback transaction
     if result.is_ok() {
         commit_context(transactional_context).await?;
     } else {
         rollback_context(transactional_context).await?;
     }
-    result
-}
 
-fn parse_variable<T>(variable: Result<String, VarError>, error_message: &str) -> T
-where
-    T: FromStr,
-    T::Err: Debug,
-{
-    variable.unwrap().trim().parse::<T>().expect(error_message)
+    // Return result of the closure
+    result
 }

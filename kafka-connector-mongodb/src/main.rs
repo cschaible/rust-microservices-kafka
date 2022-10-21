@@ -4,11 +4,12 @@ use std::sync::Arc;
 use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
+use common_error::AppError;
 use dotenv::dotenv;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use tracing::info;
-use tracing_common::init_tracing;
+use tracing_common::initialize_logging_and_tracing;
 
 use crate::common::api::health;
 use crate::common::context::ContextImpl;
@@ -25,19 +26,19 @@ pub mod job;
 pub mod schedule;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), AppError> {
     // Initialize from .env file
     dotenv().ok();
 
     // Initialize logging and tracing
-    init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
+    initialize_logging_and_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
         // e.add_directive("kafka_connector_mongodb=trace".parse().unwrap_or_default())
         e.add_directive(
             format!("{}::event=trace", env!("CARGO_PKG_NAME").replace('-', "_"))
                 .parse()
                 .unwrap_or_default(),
         )
-    });
+    })?;
 
     // Initialize db connection pool
     let db_client = init_db_client()
@@ -74,4 +75,6 @@ async fn main() {
         .unwrap();
 
     opentelemetry::global::shutdown_tracer_provider();
+
+    Ok(())
 }

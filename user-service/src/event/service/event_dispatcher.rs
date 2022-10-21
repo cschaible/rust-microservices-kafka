@@ -13,6 +13,10 @@ pub struct EventDispatcher {
 }
 
 impl EventDispatcher {
+    pub fn new(event_converters: Vec<Arc<DynEventConverter>>) -> Self {
+        EventDispatcher { event_converters }
+    }
+
     #[instrument(name = "event_dispatcher.dispatch", skip_all)]
     pub async fn dispatch(
         &self,
