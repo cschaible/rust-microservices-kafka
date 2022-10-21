@@ -12,11 +12,13 @@ use tracing::error;
 
 #[derive(Clone, Debug)]
 pub enum AppError {
+    ConfigError(Arc<config::ConfigError>),
     Unhandled(Arc<anyhow::Error>),
     RelDbUnhandledDbError(sea_orm::DbErr),
     MongoDbError(mongodb::error::Error),
     MongoDbBsonError(mongodb::bson::ser::Error),
     DbError(DbError),
+    IoError(Arc<std::io::Error>),
     SerializationError(schema_registry_converter::error::SRCError),
 }
 
@@ -48,6 +50,16 @@ impl IntoResponse for AppError {
 
 pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
     match error {
+        AppError::ConfigError(e) => (
+            "Internal Server Error",
+            format!("{:?}", e),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ),
+        AppError::IoError(e) => (
+            "Internal Server Error",
+            format!("{:?}", e),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ),
         AppError::Unhandled(e) => (
             "Internal Server Error",
             format!("{:?}", e),
@@ -131,9 +143,21 @@ impl From<anyhow::Error> for AppError {
     }
 }
 
+impl From<config::ConfigError> for AppError {
+    fn from(e: config::ConfigError) -> Self {
+        AppError::ConfigError(Arc::new(e))
+    }
+}
+
 impl From<sea_orm::DbErr> for AppError {
     fn from(e: sea_orm::DbErr) -> Self {
         AppError::RelDbUnhandledDbError(e)
+    }
+}
+
+impl From<std::io::Error> for AppError {
+    fn from(e: std::io::Error) -> Self {
+        AppError::IoError(Arc::new(e))
     }
 }
 

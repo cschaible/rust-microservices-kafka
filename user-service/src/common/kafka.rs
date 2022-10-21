@@ -1,21 +1,20 @@
+use common_error::AppError;
 use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::async_impl::schema_registry::SrSettings;
 
-#[derive(Clone)]
-pub struct TopicConfiguration {
-    pub topic: String,
-    pub partitions: i32,
+use crate::config::configuration::KafkaConfiguration;
+
+pub fn init_avro_encoder<'a, 'b>(
+    config: &'a KafkaConfiguration,
+) -> Result<AvroEncoder<'b>, AppError> {
+    let sr_settings = resolve_sr_settings(config)?;
+    Ok(get_avro_encoder(&sr_settings))
 }
 
-pub fn resolve_sr_settings() -> SrSettings {
-    let schema_registry_url = std::env::var("KAFKA_SCHEMA_REGISTRY_URL")
-        .expect("Environment variable 'KAFKA_SCHEMA_REGISTRY_URL' not set");
-
-    SrSettings::new_builder(schema_registry_url)
-        .build()
-        .expect("Initialization of schema registry configuration failed")
+fn resolve_sr_settings(config: &KafkaConfiguration) -> Result<SrSettings, AppError> {
+    Ok(SrSettings::new_builder(config.schema_registry.url.clone()).build()?)
 }
 
-pub fn get_avro_encoder<'a>(sr_settings: &SrSettings) -> AvroEncoder<'a> {
+fn get_avro_encoder<'a>(sr_settings: &SrSettings) -> AvroEncoder<'a> {
     AvroEncoder::new(sr_settings.clone())
 }

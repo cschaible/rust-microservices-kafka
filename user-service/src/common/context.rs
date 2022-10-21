@@ -19,7 +19,21 @@ pub trait Context: Sync + Send {
 #[derive(Clone)]
 pub struct ContextImpl {
     pub db: Arc<DatabaseConnection>,
-    pub(crate) event_dispatcher: Arc<EventDispatcher>,
+    pub event_dispatcher: Arc<EventDispatcher>,
+}
+
+impl ContextImpl {
+    pub fn new_dyn_context(
+        connection_pool: Arc<DatabaseConnection>,
+        event_dispatcher: Arc<EventDispatcher>,
+    ) -> DynContext {
+        let context = ContextImpl {
+            db: connection_pool,
+            event_dispatcher,
+        };
+        let context: DynContext = Arc::new(context);
+        context
+    }
 }
 
 impl Context for ContextImpl {

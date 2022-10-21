@@ -11,6 +11,7 @@ anyhow = "1.0"
 apache-avro = "0.14.0"
 async-graphql = { version = "4.0.12", features = ["dataloader", "opentelemetry", "tracing", "uuid"] }
 axum = "0.5.0"
+config = "0.13.2"
 mongodb = "2.3.0"
 schema_registry_converter = { git = "https://github.com/gklijs/schema_registry_converter", branch = "main", features = ["avro"] }
 sea-orm = { version = "0.9.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false }

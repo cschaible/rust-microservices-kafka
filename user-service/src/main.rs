@@ -6,89 +6,80 @@ use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
-use common::kafka::get_avro_encoder;
-use common::kafka::resolve_sr_settings;
-use dotenv::dotenv;
+use common_error::AppError;
 use migration::Migrator;
-use sea_orm_migration::MigratorTrait;
 use tower::limit::ConcurrencyLimitLayer;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
-use tracing_common::init_tracing;
 
 use crate::common::api::health;
+use crate::common::api::SERVER_PORT;
 use crate::common::context::ContextImpl;
-use crate::common::db::init_db_pool;
-use crate::common::kafka::TopicConfiguration;
+use crate::common::db;
+use crate::common::kafka;
 use crate::common::server::shutdown_signal;
+use crate::config::configuration::Configuration;
+use crate::config::configuration::ServerConfiguration;
+use crate::config::logging_tracing;
 use crate::event::service::event_dispatcher::EventDispatcher;
 use crate::event::DynEventConverter;
 use crate::user::event::user_converter::UserEventEncoder;
 
-mod common;
-mod event;
-mod graphql;
-mod migration;
-mod user;
+pub(crate) mod common;
+pub(crate) mod config;
+pub(crate) mod event;
+pub(crate) mod graphql;
+pub(crate) mod migration;
+pub(crate) mod user;
 
 #[tokio::main]
-async fn main() {
-    // Initialize from .env file
-    dotenv().ok();
-
-    // TODO: https://github.com/mehcode/config-rs
+async fn main() -> Result<(), AppError> {
+    // Load configuration files
+    let config = Configuration::load()?;
 
     // Initialize logging and tracing
-    init_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
-        e.add_directive(
-            "sea_orm::database::transaction=info" // trace
-                .parse()
-                .unwrap_or_default(),
-        )
-    });
+    logging_tracing::init(&config)?;
 
-    // Initialize db connection pool
-    let db = init_db_pool().await;
+    // Initialize db connection pool and migrate database
+    let connection_pool = db::init_pool(&config.database).await?;
+    db::migrate(&connection_pool).await?;
 
-    // Migrate database
-    match Migrator::up(&db, None).await {
-        Ok(_) => tracing::debug!("Finished migration steps"),
-        Err(e) => {
-            tracing::error!("Failed to apply migration: {:?}", e);
-            return;
-        }
-    }
+    // Initialize user schema encoder
+    let user_event_converter: Arc<DynEventConverter> =
+        Arc::new(Box::new(UserEventEncoder::new(&config.kafka)?));
 
-    // Initialize schema registry client settings
-    let sr_settings = resolve_sr_settings();
-
-    // Construct topic configuration
-    let user_topic_configuration = TopicConfiguration {
-        topic: "user".to_owned(),
-        partitions: 2,
-    };
-
-    // Construct avro encoder, converter and dispatcher
-    let avro_encoder = Arc::new(get_avro_encoder(&sr_settings));
-
-    // User
-    let user_encoder =
-        UserEventEncoder::new(avro_encoder.clone(), user_topic_configuration.clone());
-
-    let user_event_converter: Arc<DynEventConverter> = Arc::new(Box::new(user_encoder));
-
-    let event_dispatcher = EventDispatcher {
-        event_converters: vec![user_event_converter],
-    };
+    // Initialize event_dispatcher
+    let event_dispatcher = EventDispatcher::new(vec![user_event_converter]);
 
     // Construct request context
-    let context = ContextImpl {
-        db: Arc::new(db),
-        event_dispatcher: Arc::new(event_dispatcher),
-    };
-    let context: DynContext = Arc::new(context);
+    let context =
+        ContextImpl::new_dyn_context(Arc::new(connection_pool), Arc::new(event_dispatcher));
 
-    // Configure routing. Configure separate router to not trace /health calls.
+    // Start the web-server
+    start_web_server(&config.server, context).await;
+
+    Ok(())
+}
+
+async fn start_web_server(config: &ServerConfiguration, context: DynContext) {
+    // Initialize routing
+    let routing = init_routing(context);
+
+    // Start server
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
+    tracing::info!("listening on {addr}");
+
+    axum::Server::bind(&addr)
+        .serve(routing.into_make_service_with_connect_info::<SocketAddr>())
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
+
+    // Shutdown tracing provider
+    opentelemetry::global::shutdown_tracer_provider();
+}
+
+fn init_routing(context: DynContext) -> Router {
     let base_router = Router::new().route("/health", get(health));
 
     let user_rest_router = user::api::rest::routing::init()
@@ -99,21 +90,9 @@ async fn main() {
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
-    let global_router = base_router
+    base_router
         .merge(user_rest_router)
         .merge(graphql_router)
         .layer(Extension(context))
-        .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)));
-
-    // Start server
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-    tracing::info!("listening on {addr}");
-
-    axum::Server::bind(&addr)
-        .serve(global_router.into_make_service_with_connect_info::<SocketAddr>())
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap();
-
-    opentelemetry::global::shutdown_tracer_provider();
+        .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)))
 }

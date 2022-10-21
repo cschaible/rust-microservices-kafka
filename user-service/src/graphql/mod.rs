@@ -1,3 +1,5 @@
+use std::sync::atomic::Ordering::SeqCst;
+
 use async_graphql::dataloader::DataLoader;
 use async_graphql::http::GraphiQLSource;
 use async_graphql::EmptySubscription;
@@ -10,6 +12,7 @@ use axum::routing::get;
 use axum::Extension;
 use axum::Router;
 
+use crate::common::api;
 use crate::user::api::graphql::mutation::Mutation;
 use crate::user::api::graphql::query::loaders::PhoneNumberLoader;
 use crate::user::api::graphql::query::Query;
@@ -46,15 +49,10 @@ async fn graphql_sdl(schema: Extension<ApplicationSchema>) -> impl IntoResponse 
 }
 
 async fn graphiql() -> impl IntoResponse {
-    let graphiql_port = if let Ok(port) = std::env::var("GRAPHIQL_PORT") {
-        port
-    } else {
-        "3000".to_string()
-    };
-
+    let port = api::SERVER_PORT.load(SeqCst);
     response::Html(
         GraphiQLSource::build()
-            .endpoint(&format!("http://localhost:{}/graphql", graphiql_port))
+            .endpoint(&format!("http://localhost:{}/graphql", port))
             .finish(),
     )
 }

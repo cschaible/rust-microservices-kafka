@@ -13,26 +13,26 @@ use schema_registry_converter::async_impl::avro::AvroEncoder;
 use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
 use tracing::instrument;
 
-use crate::common::kafka::TopicConfiguration;
+use crate::config::configuration::KafkaConfiguration;
+use crate::config::configuration::TopicProperties;
 use crate::event::service::dto::EventDto;
 use crate::event::service::dto::SerializableEventDto;
 use crate::event::EventConverter;
+use crate::kafka;
 use crate::user::event::dto::UserWithPhoneNumbersDto;
 
+#[derive(Clone)]
 pub struct UserEventEncoder<'a> {
     pub(crate) avro_encoder: Arc<AvroEncoder<'a>>,
-    pub(crate) topic_configuration: TopicConfiguration,
+    pub(crate) topic_configuration: TopicProperties,
 }
 
 impl<'a> UserEventEncoder<'a> {
-    pub fn new(
-        avro_encoder: Arc<AvroEncoder>,
-        topic_configuration: TopicConfiguration,
-    ) -> UserEventEncoder {
-        UserEventEncoder {
-            avro_encoder,
-            topic_configuration,
-        }
+    pub fn new<'b>(config: &'b KafkaConfiguration) -> Result<UserEventEncoder<'a>, AppError> {
+        Ok(UserEventEncoder {
+            avro_encoder: Arc::new(kafka::init_avro_encoder(config)?),
+            topic_configuration: config.topic.get_mapping("user"),
+        })
     }
 }
 
@@ -60,9 +60,6 @@ impl<'a> EventConverter for UserEventEncoder<'a> {
         )
         .expect("Invalid partition number detected");
 
-        // Get topic
-        let topic = self.topic_configuration.topic.clone();
-
         // Serialize value
         let value_sns = SubjectNameStrategy::RecordNameStrategy(event_type.clone());
         let serialized_value: Vec<u8> = if event_type == *SCHEMA_NAME_CREATE_USER {
@@ -86,6 +83,9 @@ impl<'a> EventConverter for UserEventEncoder<'a> {
         let key_sns = SubjectNameStrategy::RecordNameStrategy(SCHEMA_NAME_KEY.to_string());
 
         let serialized_key = self.avro_encoder.encode_struct(key_avro, &key_sns).await?;
+
+        // Get topic
+        let topic = self.topic_configuration.topic_name.clone();
 
         // Return dto with required parameters to send it with kafka
         Ok(EventDto {

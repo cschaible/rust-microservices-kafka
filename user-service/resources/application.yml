@@ -1,0 +1,31 @@
+database:
+  connection:
+    pool:
+      min: 1
+      max: 10
+    #Optional parameters
+    # connect_timeout:
+    # idle_timeout:
+    # max_lifetime:
+  logging:
+    enabled: false
+
+logging:
+  level:
+    root: warn
+    directives:
+      - namespace: user_service
+        level: info
+      - namespace: common_error
+        level: trace
+      - namespace: tower_http
+        level: debug
+      - namespace: sea_orm::database::transaction
+        level: info
+      - namespace: sea_orm_migration
+        level: info
+      - namespace: sqlx::query
+        level: info
+
+server:
+  port: 3000
