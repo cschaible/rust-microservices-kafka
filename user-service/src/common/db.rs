@@ -42,11 +42,11 @@ pub async fn init_pool(config: &DatabaseConfiguration) -> Result<DatabaseConnect
     }
 
     if let Some(idle_timeout) = config.connection.idle_timeout {
-        opt.connect_timeout(Duration::from_secs(idle_timeout));
+        opt.idle_timeout(Duration::from_secs(idle_timeout));
     }
 
     if let Some(max_lifetime) = config.connection.max_lifetime {
-        opt.connect_timeout(Duration::from_secs(max_lifetime));
+        opt.max_lifetime(Duration::from_secs(max_lifetime));
     }
 
     // Create pool
