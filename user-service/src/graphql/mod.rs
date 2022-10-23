@@ -28,12 +28,12 @@ async fn graphql_handler(
 }
 
 pub fn routing(context: DynContext) -> Router {
-    let room_type_loader =
+    let phone_number_loader =
         DataLoader::new(PhoneNumberLoader::new(context.clone()), tokio::task::spawn);
 
     let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription)
         .data(context)
-        .data(room_type_loader)
+        .data(phone_number_loader)
         // TODO check if "Tracing" extension can log errors properly
         //.extension(Tracing)
         .finish();
