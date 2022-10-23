@@ -1,2 +1,2 @@
 #!/bin/bash
-./gradlew gatlingRun-simulations.CreateUserSimulation
+./gradlew --no-daemon gatlingRun-simulations.CreateUserSimulation

@@ -1,2 +1,2 @@
 #!/bin/bash
-./gradlew gatlingRun-simulations.CreateAccommodationSimulation
+./gradlew --no-daemon gatlingRun-simulations.CreateAccommodationSimulation
