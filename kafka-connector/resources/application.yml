@@ -1,0 +1,31 @@
+database:
+  connection:
+    pool:
+      min: 1
+      max: 2
+    #Optional parameters
+    # connect_timeout:
+    # idle_timeout:
+    # max_lifetime:
+  logging:
+    enabled: false
+
+logging:
+  level:
+    root: warn
+    directives:
+      - namespace: kafka_connector
+        level: debug
+      - namespace: kafka_connector::event
+        level: trace
+      - namespace: common_error
+        level: trace
+      - namespace: tower_http
+        level: debug
+      - namespace: sea_orm::database::transaction
+        level: info
+      - namespace: sqlx::query
+        level: info
+
+server:
+  port: 3001

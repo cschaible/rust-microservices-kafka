@@ -16,6 +16,16 @@ pub struct ContextImpl {
     pub db: Arc<DatabaseConnection>,
 }
 
+impl ContextImpl {
+    pub fn new_dyn_context(connection_pool: Arc<DatabaseConnection>) -> DynContext {
+        let context = ContextImpl {
+            db: connection_pool,
+        };
+        let context: DynContext = Arc::new(context);
+        context
+    }
+}
+
 impl Context for ContextImpl {
     fn db_connection(&self) -> Arc<DatabaseConnection> {
         self.db.clone()
