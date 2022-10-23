@@ -13,13 +13,14 @@ use tracing::error;
 #[derive(Clone, Debug)]
 pub enum AppError {
     ConfigError(Arc<config::ConfigError>),
-    Unhandled(Arc<anyhow::Error>),
-    RelDbUnhandledDbError(sea_orm::DbErr),
-    MongoDbError(mongodb::error::Error),
-    MongoDbBsonError(mongodb::bson::ser::Error),
     DbError(DbError),
     IoError(Arc<std::io::Error>),
+    KafkaError(rdkafka::error::KafkaError),
+    MongoDbBsonError(mongodb::bson::ser::Error),
+    MongoDbError(mongodb::error::Error),
+    RelDbUnhandledDbError(sea_orm::DbErr),
     SerializationError(schema_registry_converter::error::SRCError),
+    Unhandled(Arc<anyhow::Error>),
 }
 
 #[derive(Clone, Debug)]
@@ -55,17 +56,6 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
-        AppError::IoError(e) => (
-            "Internal Server Error",
-            format!("{:?}", e),
-            StatusCode::INTERNAL_SERVER_ERROR,
-        ),
-        AppError::Unhandled(e) => (
-            "Internal Server Error",
-            format!("{:?}", e),
-            StatusCode::INTERNAL_SERVER_ERROR,
-        ),
-        AppError::RelDbUnhandledDbError(e) => handle_sea_orm_db_error(e),
         AppError::DbError(e) => match e {
             DbError::Conflict => (
                 "Conflict",
@@ -78,9 +68,14 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
                 StatusCode::NOT_FOUND,
             ),
         },
-        AppError::MongoDbError(e) => (
+        AppError::IoError(e) => (
             "Internal Server Error",
-            format!("{:?}", e.kind.as_ref()),
+            format!("{:?}", e),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ),
+        AppError::KafkaError(e) => (
+            "Internal Server Error",
+            format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
         AppError::MongoDbBsonError(e) => (
@@ -88,7 +83,18 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
+        AppError::MongoDbError(e) => (
+            "Internal Server Error",
+            format!("{:?}", e.kind.as_ref()),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ),
+        AppError::RelDbUnhandledDbError(e) => handle_sea_orm_db_error(e),
         AppError::SerializationError(e) => (
+            "Internal Server Error",
+            format!("{:?}", e),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ),
+        AppError::Unhandled(e) => (
             "Internal Server Error",
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -149,24 +155,6 @@ impl From<config::ConfigError> for AppError {
     }
 }
 
-impl From<sea_orm::DbErr> for AppError {
-    fn from(e: sea_orm::DbErr) -> Self {
-        AppError::RelDbUnhandledDbError(e)
-    }
-}
-
-impl From<std::io::Error> for AppError {
-    fn from(e: std::io::Error) -> Self {
-        AppError::IoError(Arc::new(e))
-    }
-}
-
-impl From<schema_registry_converter::error::SRCError> for AppError {
-    fn from(e: schema_registry_converter::error::SRCError) -> Self {
-        AppError::SerializationError(e)
-    }
-}
-
 impl From<mongodb::bson::ser::Error> for AppError {
     fn from(e: mongodb::bson::ser::Error) -> Self {
         AppError::MongoDbBsonError(e)
@@ -176,6 +164,30 @@ impl From<mongodb::bson::ser::Error> for AppError {
 impl From<mongodb::error::Error> for AppError {
     fn from(e: mongodb::error::Error) -> Self {
         AppError::MongoDbError(e)
+    }
+}
+
+impl From<rdkafka::error::KafkaError> for AppError {
+    fn from(e: rdkafka::error::KafkaError) -> Self {
+        AppError::KafkaError(e)
+    }
+}
+
+impl From<schema_registry_converter::error::SRCError> for AppError {
+    fn from(e: schema_registry_converter::error::SRCError) -> Self {
+        AppError::SerializationError(e)
+    }
+}
+
+impl From<sea_orm::DbErr> for AppError {
+    fn from(e: sea_orm::DbErr) -> Self {
+        AppError::RelDbUnhandledDbError(e)
+    }
+}
+
+impl From<std::io::Error> for AppError {
+    fn from(e: std::io::Error) -> Self {
+        AppError::IoError(Arc::new(e))
     }
 }
 

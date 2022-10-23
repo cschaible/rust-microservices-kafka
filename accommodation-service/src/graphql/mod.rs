@@ -1,3 +1,5 @@
+use std::sync::atomic::Ordering::SeqCst;
+
 use async_graphql::dataloader::DataLoader;
 use async_graphql::http::GraphiQLSource;
 use async_graphql::EmptySubscription;
@@ -13,6 +15,7 @@ use axum::Router;
 use crate::accommodation::api::mutation::Mutation;
 use crate::accommodation::api::query::loaders::RoomTypeLoader;
 use crate::accommodation::api::query::Query;
+use crate::common::api;
 use crate::DynContext;
 
 pub type ApplicationSchema = Schema<Query, Mutation, EmptySubscription>;
@@ -46,15 +49,10 @@ async fn graphql_sdl(schema: Extension<ApplicationSchema>) -> impl IntoResponse 
 }
 
 async fn graphiql() -> impl IntoResponse {
-    let graphiql_port = if let Ok(port) = std::env::var("GRAPHIQL_PORT") {
-        port
-    } else {
-        "3005".to_string()
-    };
-
+    let port = api::SERVER_PORT.load(SeqCst);
     response::Html(
         GraphiQLSource::build()
-            .endpoint(&format!("http://localhost:{}/graphql", graphiql_port))
+            .endpoint(&format!("http://localhost:{}/graphql", port))
             .finish(),
     )
 }
