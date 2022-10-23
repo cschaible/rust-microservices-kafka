@@ -25,6 +25,22 @@ pub struct ContextImpl {
     pub event_dispatcher: Arc<EventDispatcher>,
 }
 
+impl ContextImpl {
+    pub fn new_dyn_context(
+        avro_decoder: Arc<dyn RecordDecoder>,
+        client: Arc<Client>,
+        event_dispatcher: Arc<EventDispatcher>,
+    ) -> DynContext {
+        let context = ContextImpl {
+            avro_decoder,
+            client,
+            event_dispatcher,
+        };
+        let context: DynContext = Arc::new(context);
+        context
+    }
+}
+
 impl Context for ContextImpl {
     fn avro_decoder(&self) -> Arc<dyn RecordDecoder> {
         self.avro_decoder.clone()
@@ -91,7 +107,6 @@ pub async fn commit_context<'a>(
             if !error.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
                 return Err(error.into());
             }
-            // else retry
         } else {
             return Ok(());
         }

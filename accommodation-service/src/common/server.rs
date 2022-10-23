@@ -1,6 +1,6 @@
 use tokio::task::JoinHandle;
 
-pub async fn shutdown_signal(kafka_handle: JoinHandle<()>) {
+pub async fn shutdown_signal(shutdown_handles: Vec<JoinHandle<()>>) {
     let ctrl_c = async {
         tokio::signal::ctrl_c()
             .await
@@ -24,6 +24,8 @@ pub async fn shutdown_signal(kafka_handle: JoinHandle<()>) {
     }
 
     tracing::warn!("Signal received, starting graceful shutdown");
-    kafka_handle.abort();
+    for handle in shutdown_handles {
+        handle.abort();
+    }
     opentelemetry::global::shutdown_tracer_provider();
 }

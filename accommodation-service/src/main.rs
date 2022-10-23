@@ -1,5 +1,6 @@
 extern crate core;
 
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -8,147 +9,136 @@ use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
-use common::kafka::get_avro_encoder;
-use common::kafka::resolve_sr_settings;
 use common_error::AppError;
-use dotenv::dotenv;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
+use rdkafka::consumer::StreamConsumer;
+use tokio::task::JoinHandle;
 use tower::limit::ConcurrencyLimitLayer;
 use tower_http::compression::predicate::SizeAbove;
 use tower_http::compression::CompressionLayer;
-use tracing_common::initialize_logging_and_tracing;
 
 use crate::accommodation::event::accommodation_converter::AccommodationEventEncoder;
 use crate::accommodation::event::room_type_converter::RoomTypeEventEncoder;
 use crate::common::api::health;
 use crate::common::context::ContextImpl;
-use crate::common::db::create_indexes;
-use crate::common::db::init_db_client;
-use crate::common::kafka::get_avro_decoder;
-use crate::common::kafka::init_consumer;
+use crate::common::db;
+use crate::common::kafka;
 use crate::common::kafka::AvroRecordDecoder;
-use crate::common::kafka::TopicConfiguration;
 use crate::common::server::shutdown_signal;
+use crate::config::configuration::Configuration;
+use crate::config::configuration::KafkaConfiguration;
+use crate::config::configuration::ServerConfiguration;
+use crate::config::logging_tracing;
 use crate::event::service::event_dispatcher::EventDispatcher;
 use crate::event::DynEventConverter;
 use crate::user::listener::listen;
 
 mod accommodation;
 mod common;
+mod config;
 mod event;
 mod graphql;
 mod user;
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    // Initialize from .env file
-    dotenv().ok();
-
-    // TODO: https://github.com/mehcode/config-rs
+    // Load configuration files
+    let config = Configuration::load()?;
 
     // Initialize logging and tracing
-    initialize_logging_and_tracing(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), |e| {
-        e // .add_directive("async_graphql::graphql=info".parse().unwrap_or_default())
-            .add_directive(
-                format!(
-                    "{}::user::listener=trace",
-                    env!("CARGO_PKG_NAME").replace('-', "_")
-                )
-                .parse()
-                .unwrap_or_default(),
-            )
-        //.add_directive("rdkafka=trace".parse().unwrap_or_default())
-    })?;
+    logging_tracing::init(&config)?;
 
-    // Initialize db client
-    let db_client = init_db_client()
-        .await
-        .expect("DB client initialization failed");
+    // Init db client and create indexes
+    let db_client = db::init_db_client(&config.database).await?;
+    db::create_indexes(&db_client).await?;
 
-    // Create indexes
-    create_indexes(&db_client)
-        .await
-        .expect("Index creation failed");
+    // Initialize schema decoder
+    let avro_decoder = AvroRecordDecoder::new(&config.kafka)?;
 
-    // Initialize schema registry client settings
-    let sr_settings = resolve_sr_settings();
-
-    // Construct topic configuration
-    let accommodation_topic_configuration = TopicConfiguration {
-        topic: "accommodation".to_owned(),
-        partitions: 2,
-    };
-
-    // Construct avro decoder
-    let avro_decoder = get_avro_decoder(&sr_settings);
-    let avro_record_decoder = AvroRecordDecoder { avro_decoder };
-
-    // Construct avro encoder, converter and dispatcher
-    let avro_encoder = Arc::new(get_avro_encoder(&sr_settings));
-
-    // Accommodation
-    let accommodation_encoder = AccommodationEventEncoder::new(
-        avro_encoder.clone(),
-        accommodation_topic_configuration.clone(),
-    );
-
+    // Initialize schema encoders
     let accommodation_event_converter: Arc<DynEventConverter> =
-        Arc::new(Box::new(accommodation_encoder));
+        Arc::new(Box::new(AccommodationEventEncoder::new(&config.kafka)?));
 
-    // Room-type
-    let room_type_encoder = RoomTypeEventEncoder::new(
-        avro_encoder.clone(),
-        accommodation_topic_configuration.clone(),
-    );
+    let room_type_event_converter: Arc<DynEventConverter> =
+        Arc::new(Box::new(RoomTypeEventEncoder::new(&config.kafka)?));
 
-    let room_type_event_converter: Arc<DynEventConverter> = Arc::new(Box::new(room_type_encoder));
-
-    let event_dispatcher = EventDispatcher {
-        event_converters: vec![accommodation_event_converter, room_type_event_converter],
-    };
+    // Initialize event dispatcher
+    let event_dispatcher = EventDispatcher::new(vec![
+        accommodation_event_converter,
+        room_type_event_converter,
+    ]);
 
     // Construct request context
-    let context = ContextImpl {
-        avro_decoder: Arc::new(avro_record_decoder),
-        client: Arc::new(db_client),
-        event_dispatcher: Arc::new(event_dispatcher),
-    };
-    let context: DynContext = Arc::new(context);
+    let context = ContextImpl::new_dyn_context(
+        Arc::new(avro_decoder),
+        Arc::new(db_client),
+        Arc::new(event_dispatcher),
+    );
 
-    // Initialize tracing propagator
+    // Initialize kafka consumers
+    let mut consumers = kafka::init_consumers(&config.kafka)?;
     let propagator = Arc::new(Propagator::with_encoding(B3Encoding::SingleHeader));
-    let kafka_consumer = init_consumer();
+    let user_handle = init_user_kafka_consumer(
+        context.clone(),
+        &config.kafka,
+        &mut consumers,
+        propagator.clone(),
+    );
 
-    // Construct kafka stream consumer
-    let consumer_context = context.clone();
-    let consumer_handle = tokio::spawn(async move {
-        listen(consumer_context, &kafka_consumer, propagator).await;
-    });
+    // Start the web-server
+    start_web_server(&config.server, context, vec![user_handle]).await;
 
-    // Configure routing. Configure separate router to not trace /health calls.
+    Ok(())
+}
+
+async fn start_web_server(
+    config: &ServerConfiguration,
+    context: DynContext,
+    shutdown_handles: Vec<JoinHandle<()>>,
+) {
+    // Initialize routing
+    let routing = init_routing(context);
+
+    // Start server
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
+    tracing::info!("listening on {addr}");
+
+    axum::Server::bind(&addr)
+        .serve(routing.into_make_service_with_connect_info::<SocketAddr>())
+        .with_graceful_shutdown(shutdown_signal(shutdown_handles))
+        .await
+        .unwrap();
+
+    // Shutdown tracing provider
+    opentelemetry::global::shutdown_tracer_provider();
+}
+
+fn init_routing(context: DynContext) -> Router {
     let base_router = Router::new().route("/health", get(health));
 
     let graphql_router = graphql::routing(context.clone())
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
-    let global_router = base_router
+    base_router
         .merge(graphql_router)
         .layer(Extension(context))
-        .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)));
+        .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)))
+}
 
-    // Start server
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3005));
-    tracing::info!("listening on {addr}");
-
-    axum::Server::bind(&addr)
-        .serve(global_router.into_make_service_with_connect_info::<SocketAddr>())
-        .with_graceful_shutdown(shutdown_signal(consumer_handle))
-        .await
-        .unwrap();
-
-    opentelemetry::global::shutdown_tracer_provider();
-
-    Ok(())
+fn init_user_kafka_consumer(
+    context: DynContext,
+    config: &KafkaConfiguration,
+    kafka_consumers: &mut HashMap<String, StreamConsumer>,
+    propagator: Arc<Propagator>,
+) -> JoinHandle<()> {
+    listen(
+        context.clone(),
+        config,
+        kafka_consumers
+            .remove("user")
+            .expect("User consumer not initialized"),
+        propagator,
+    )
 }

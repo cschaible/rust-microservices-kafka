@@ -1,0 +1,32 @@
+database:
+  connection:
+    pool:
+      min: 1
+      max: 100
+    #Optional parameters
+    # connect_timeout:
+    # idle_timeout:
+
+kafka:
+  consumer:
+    - id: user
+      topic:
+        - user
+      client_id: accommodation-service
+      group_id: accommodation-service1
+
+logging:
+  level:
+    root: warn
+    directives:
+      - namespace: accommodation_service
+        level: info
+      - namespace: accommodation_service::user::listener
+        level: trace
+      - namespace: common_error
+        level: trace
+      - namespace: tower_http
+        level: debug
+
+server:
+  port: 3005

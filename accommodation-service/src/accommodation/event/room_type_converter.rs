@@ -18,25 +18,24 @@ use schema_registry_converter::schema_registry_common::SubjectNameStrategy;
 use tracing::instrument;
 
 use crate::accommodation::model::RoomType;
+use crate::common::kafka;
+use crate::config::configuration::KafkaConfiguration;
+use crate::config::configuration::TopicProperties;
 use crate::event::service::dto::EventDto;
 use crate::event::service::dto::SerializableEventDto;
 use crate::event::EventConverter;
-use crate::TopicConfiguration;
 
 pub struct RoomTypeEventEncoder<'a> {
     pub(crate) avro_encoder: Arc<AvroEncoder<'a>>,
-    pub(crate) topic_configuration: TopicConfiguration,
+    pub(crate) topic_configuration: TopicProperties,
 }
 
 impl<'a> RoomTypeEventEncoder<'a> {
-    pub fn new(
-        avro_encoder: Arc<AvroEncoder>,
-        topic_configuration: TopicConfiguration,
-    ) -> RoomTypeEventEncoder {
-        RoomTypeEventEncoder {
-            avro_encoder,
-            topic_configuration,
-        }
+    pub fn new<'b>(config: &'b KafkaConfiguration) -> Result<RoomTypeEventEncoder<'a>, AppError> {
+        Ok(RoomTypeEventEncoder {
+            avro_encoder: Arc::new(kafka::init_avro_encoder(config)?),
+            topic_configuration: config.topic.get_mapping("accommodation"),
+        })
     }
 }
 
@@ -68,9 +67,6 @@ impl<'a> EventConverter for RoomTypeEventEncoder<'a> {
             self.topic_configuration.partitions,
         )
         .expect("Invalid partition number detected");
-
-        // Get topic
-        let topic = self.topic_configuration.topic.clone();
 
         // Serialize value
         let value_sns = SubjectNameStrategy::RecordNameStrategy(event_type.clone());
@@ -106,6 +102,9 @@ impl<'a> EventConverter for RoomTypeEventEncoder<'a> {
         let key_sns = SubjectNameStrategy::RecordNameStrategy(SCHEMA_NAME_KEY.to_string());
 
         let serialized_key = self.avro_encoder.encode_struct(key_avro, &key_sns).await?;
+
+        // Get topic
+        let topic = self.topic_configuration.topic_name.clone();
 
         // Return dto with required parameters to send it with kafka
         Ok(EventDto {

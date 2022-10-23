@@ -1,0 +1,13 @@
+database:
+  url: mongodb://localhost:27017/accommodation-service?replicaSet=replica-set-1
+
+kafka:
+  broker:
+    urls: localhost:9092
+  schema_registry:
+    url: http://localhost:8081
+  topic:
+    mappings:
+      - id: accommodation
+        topic_name: accommodation
+        partitions: 2

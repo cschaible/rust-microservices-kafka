@@ -1,8 +1,10 @@
 use std::panic;
 use std::sync::Arc;
 
+use apache_avro::schema::Name;
 use kafka_schema_common::schema_key::KeyAvro;
 use kafka_schema_user::schema_create_user::CreateUserAvro;
+use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use opentelemetry_propagator_b3::propagator::B3_SINGLE_HEADER;
 use rdkafka::consumer::Consumer;
@@ -11,6 +13,7 @@ use rdkafka::message::BorrowedHeaders;
 use rdkafka::message::FromBytes;
 use rdkafka::message::Headers;
 use rdkafka::Message;
+use tokio::task::JoinHandle;
 use tracing::debug;
 use tracing::instrument::Instrumented;
 use tracing::span;
@@ -23,12 +26,29 @@ use tracing_common::get_context_from_b3;
 use uuid::Uuid;
 
 use crate::common::db::transactional2;
+use crate::config::configuration::ConsumerConfiguration;
+use crate::config::configuration::KafkaConfiguration;
 use crate::user;
 use crate::DynContext;
 
-pub async fn listen(
+pub fn listen(
+    context: DynContext,
+    config: &KafkaConfiguration,
+    stream_consumer: StreamConsumer,
+    tracing_propagator: Arc<Propagator>,
+) -> JoinHandle<()> {
+    let topic = get_user_topic_name(config);
+
+    // Start listener
+    tokio::spawn(async move {
+        do_listen(context, &stream_consumer, topic, tracing_propagator).await;
+    })
+}
+
+pub async fn do_listen(
     context: DynContext,
     stream_consumer: &StreamConsumer,
+    user_topic: String,
     tracing_propagator: Arc<Propagator>,
 ) {
     let decoder = context.avro_decoder().clone();
@@ -37,10 +57,6 @@ pub async fn listen(
         match stream_consumer.recv().await {
             Err(e) => warn!("Error: {}", e),
             Ok(message) => {
-                // let span = span!(Level::TRACE, "accommodation_service.recv");
-                // init_span_from_kafka_header(&span, message.headers(),
-                // tracing_propagator.clone());
-
                 let span = init_context(message.headers(), tracing_propagator.clone());
                 let _ = span.enter();
 
@@ -48,7 +64,7 @@ pub async fn listen(
                 let _delivery_result: Instrumented<()> = {
                     let topic = message.topic();
                     assert_eq!(
-                        topic, "user",
+                        topic, user_topic,
                         "Message from wrong topic detected. Stopped processing."
                     );
 
@@ -64,6 +80,18 @@ pub async fn listen(
                         .decode(message.payload())
                         .await
                         .expect("Couldn't decode payload");
+
+                    // Check type
+                    assert_eq!(
+                        payload_result
+                            .name
+                            .unwrap_or_else(|| Name {
+                                name: "".to_string(),
+                                namespace: None
+                            })
+                            .name,
+                        SCHEMA_NAME_CREATE_USER.to_string()
+                    );
 
                     let payload = apache_avro::from_value::<CreateUserAvro>(&payload_result.value)
                         .expect("Couldn't deserialize CreateUserAvro");
@@ -116,10 +144,8 @@ fn init_context(headers: Option<&BorrowedHeaders>, tracing_propagator: Arc<Propa
             let header = headers.get(i).expect("Invalid header detected");
             if header.0 == B3_SINGLE_HEADER {
                 if let Ok(trace_id) = str::from_bytes(header.1) {
-                    // warn!("trace_id: {}", trace_id);
                     let context =
                         get_context_from_b3(tracing_propagator.clone(), trace_id.to_string());
-                    // span.set_parent_from_b3(tracing_propagator.clone(), trace_id.to_string());
                     tracing_opentelemetry::OpenTelemetrySpanExt::set_parent(&span, context);
                 }
             }
@@ -128,37 +154,23 @@ fn init_context(headers: Option<&BorrowedHeaders>, tracing_propagator: Arc<Propa
     span
 }
 
-// fn init_span_from_kafka_header(
-// span: &Span,
-// headers: Option<&BorrowedHeaders>,
-// tracing_propagator: Arc<Propagator>,
-// ) {
-// if let Some(headers) = headers {
-// let header_count = headers.count();
-// for i in 0..header_count {
-// let header = headers.get(i).expect("Invalid header detected");
-// if header.0 == B3_SINGLE_HEADER {
-// if let Ok(trace_id) = str::from_bytes(header.1) {
-// warn!("trace_id: {}", trace_id);
-// span.set_parent_from_b3(tracing_propagator.clone(), trace_id.to_string());
-// }
-// }
-// }
-// }
-// }
+fn get_user_topic_name(config: &KafkaConfiguration) -> String {
+    // Get consumer configuration
+    let consumer_config: Vec<&ConsumerConfiguration> = config
+        .consumer
+        .iter()
+        .filter(|c| c.id.clone() == "user")
+        .collect();
 
-// fn trace_id_from_header(headers: Option<&BorrowedHeaders>) -> Option<String>
-// { if let Some(headers) = headers {
-// let header_count = headers.count();
-// for i in 0..header_count {
-// let header = headers.get(i).expect("Invalid header detected");
-// if header.0 == B3_SINGLE_HEADER {
-// if let Ok(trace_id) = str::from_bytes(header.1) {
-// warn!("trace_id: {}", trace_id);
-// return Some(trace_id.to_string());
-// }
-// }
-// }
-// }
-// return None;
-// }
+    // Get topic name
+    let topic = consumer_config
+        .first()
+        .expect("user consumer configuration not found")
+        .topic
+        .clone()
+        .first()
+        .expect("user topic not found in consumer configuration")
+        .clone();
+
+    topic
+}
