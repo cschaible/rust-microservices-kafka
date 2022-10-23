@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
+use common_error::AppError;
 use futures::future;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use opentelemetry_propagator_b3::propagator::B3_SINGLE_HEADER;
@@ -74,7 +75,7 @@ pub async fn send_to_kafka(
     producer: Arc<FutureProducer>,
     tracing_propagator: Arc<Propagator>,
     events: &EventList,
-) {
+) -> Result<(), AppError> {
     let events_to_send = &events.events;
     let number_of_events = events_to_send.len();
 
@@ -84,12 +85,10 @@ pub async fn send_to_kafka(
         info!("Sending {} events", number_of_events);
 
         // Start kafka transaction
-        producer
-            .begin_transaction()
-            .expect("Kafka transaction creation failed");
+        producer.begin_transaction()?;
 
         // Send each event individually. Send a span for each message to jaeger.
-        future::try_join_all(events_to_send.iter().map(|event| {
+        let send_result = future::try_join_all(events_to_send.iter().map(|event| {
             let trace_id = event.trace_id.clone();
 
             // Initialize span
@@ -125,18 +124,20 @@ pub async fn send_to_kafka(
 
             delivery_result
         }))
-        .await
-        .expect("Message delivery failed");
+        .await;
+
+        match send_result {
+            Ok(_) => (),
+            Err(e) => return Err(e.0.into()),
+        }
 
         // Commit kafka transaction
-        producer
-            .commit_transaction(Timeout::from(Duration::from_secs(30)))
-            .expect("Commit of kafka transaction failed");
+        producer.commit_transaction(Timeout::from(Duration::from_secs(30)))?;
 
         info!("Sent {} events", number_of_events);
-    } // else {
-      // debug!("Nothing to send");
-      // }
+    }
+
+    Ok(())
 }
 
 pub struct EventList {

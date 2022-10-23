@@ -1,0 +1,11 @@
+database:
+  url: postgres://demouser:secret@localhost:5432/demo
+
+kafka:
+  broker:
+    urls: localhost:9092
+  producer:
+    client_id: kafka-connector
+    transactional_id: kafka-connector
+  schema_registry:
+    url: http://localhost:8081

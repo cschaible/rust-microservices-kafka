@@ -19,6 +19,7 @@ pub enum AppError {
     MongoDbBsonError(mongodb::bson::ser::Error),
     MongoDbError(mongodb::error::Error),
     RelDbUnhandledDbError(sea_orm::DbErr),
+    SchedulerError(tokio_cron_scheduler::JobSchedulerError),
     SerializationError(schema_registry_converter::error::SRCError),
     Unhandled(Arc<anyhow::Error>),
 }
@@ -89,6 +90,11 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
         AppError::RelDbUnhandledDbError(e) => handle_sea_orm_db_error(e),
+        AppError::SchedulerError(e) => (
+            "Internal Server Error",
+            format!("{:?}", e),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ),
         AppError::SerializationError(e) => (
             "Internal Server Error",
             format!("{:?}", e),
@@ -188,6 +194,12 @@ impl From<sea_orm::DbErr> for AppError {
 impl From<std::io::Error> for AppError {
     fn from(e: std::io::Error) -> Self {
         AppError::IoError(Arc::new(e))
+    }
+}
+
+impl From<tokio_cron_scheduler::JobSchedulerError> for AppError {
+    fn from(e: tokio_cron_scheduler::JobSchedulerError) -> Self {
+        AppError::SchedulerError(e)
     }
 }
 

@@ -18,4 +18,5 @@ schema_registry_converter = { git = "https://github.com/gklijs/schema_registry_c
 sea-orm = { version = "0.9.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false }
 sea-orm-migration = { version = "0.9.2", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
 serde_json = "1.0.79"
+tokio-cron-scheduler = { version = "0.8.1", features = ["signal"] }
 tracing = "0.1"

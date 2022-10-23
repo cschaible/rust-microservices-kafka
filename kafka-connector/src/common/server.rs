@@ -8,7 +8,7 @@ pub async fn shutdown_signal() {
     #[cfg(unix)]
     let terminate = async {
         tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .expect("Initalization of signal handler failed")
+            .expect("Initialization of signal handler failed")
             .recv()
             .await;
     };
