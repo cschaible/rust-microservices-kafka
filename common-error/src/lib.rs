@@ -15,11 +15,17 @@ pub enum AppError {
     ConfigError(Arc<config::ConfigError>),
     DbError(DbError),
     IoError(Arc<std::io::Error>),
+    #[cfg(feature = "kafka")]
     KafkaError(rdkafka::error::KafkaError),
+    #[cfg(feature = "mongodb")]
     MongoDbBsonError(mongodb::bson::ser::Error),
+    #[cfg(feature = "mongodb")]
     MongoDbError(mongodb::error::Error),
+    #[cfg(feature = "relationaldb")]
     RelDbUnhandledDbError(sea_orm::DbErr),
+    #[cfg(feature = "scheduler")]
     SchedulerError(tokio_cron_scheduler::JobSchedulerError),
+    #[cfg(feature = "kafka")]
     SerializationError(schema_registry_converter::error::SRCError),
     Unhandled(Arc<anyhow::Error>),
 }
@@ -74,27 +80,33 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
+        #[cfg(feature = "kafka")]
         AppError::KafkaError(e) => (
             "Internal Server Error",
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
+        #[cfg(feature = "mongodb")]
         AppError::MongoDbBsonError(e) => (
             "Internal Server Error",
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
+        #[cfg(feature = "mongodb")]
         AppError::MongoDbError(e) => (
             "Internal Server Error",
             format!("{:?}", e.kind.as_ref()),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
+        #[cfg(feature = "relationaldb")]
         AppError::RelDbUnhandledDbError(e) => handle_sea_orm_db_error(e),
+        #[cfg(feature = "scheduler")]
         AppError::SchedulerError(e) => (
             "Internal Server Error",
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
         ),
+        #[cfg(feature = "kafka")]
         AppError::SerializationError(e) => (
             "Internal Server Error",
             format!("{:?}", e),
@@ -108,6 +120,7 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
     }
 }
 
+#[cfg(feature = "relationaldb")]
 fn handle_sea_orm_db_error(e: &sea_orm::DbErr) -> (&str, String, StatusCode) {
     match e {
         sea_orm::DbErr::Conn(err) => (
@@ -161,30 +174,35 @@ impl From<config::ConfigError> for AppError {
     }
 }
 
+#[cfg(feature = "mongodb")]
 impl From<mongodb::bson::ser::Error> for AppError {
     fn from(e: mongodb::bson::ser::Error) -> Self {
         AppError::MongoDbBsonError(e)
     }
 }
 
+#[cfg(feature = "mongodb")]
 impl From<mongodb::error::Error> for AppError {
     fn from(e: mongodb::error::Error) -> Self {
         AppError::MongoDbError(e)
     }
 }
 
+#[cfg(feature = "kafka")]
 impl From<rdkafka::error::KafkaError> for AppError {
     fn from(e: rdkafka::error::KafkaError) -> Self {
         AppError::KafkaError(e)
     }
 }
 
+#[cfg(feature = "kafka")]
 impl From<schema_registry_converter::error::SRCError> for AppError {
     fn from(e: schema_registry_converter::error::SRCError) -> Self {
         AppError::SerializationError(e)
     }
 }
 
+#[cfg(feature = "relationaldb")]
 impl From<sea_orm::DbErr> for AppError {
     fn from(e: sea_orm::DbErr) -> Self {
         AppError::RelDbUnhandledDbError(e)
@@ -197,6 +215,7 @@ impl From<std::io::Error> for AppError {
     }
 }
 
+#[cfg(feature = "scheduler")]
 impl From<tokio_cron_scheduler::JobSchedulerError> for AppError {
     fn from(e: tokio_cron_scheduler::JobSchedulerError) -> Self {
         AppError::SchedulerError(e)

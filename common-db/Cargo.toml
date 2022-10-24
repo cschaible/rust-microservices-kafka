@@ -10,7 +10,7 @@ license = "MIT"
 proc-macro = false
 
 [dependencies]
-common-error = { path = "../common-error" }
+common-error = { path = "../common-error", features = ["relationaldb"] }
 futures = "0.3.21"
 sea-orm = { version = "0.9.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false }
 tracing = "0.1"
