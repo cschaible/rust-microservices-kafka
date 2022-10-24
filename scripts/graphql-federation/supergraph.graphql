@@ -1,0 +1,290 @@
+schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/join/v0.2", for: EXECUTION)
+{
+  query: Query
+  mutation: Mutation
+}
+
+directive @join__field(graph: join__Graph!, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+
+"""An accommodation with all of its properties."""
+type AccommodationPayload
+  @join__type(graph: ACCOMMODATIONS)
+{
+  """Technical identifier of the accommodation"""
+  id: UUID!
+
+  """The name of the accommodation."""
+  name: String!
+
+  """A text description the accommodation."""
+  description: String!
+
+  """
+  List of room types of the accommodation.
+  Room types are independent resources with their own id.
+  """
+  roomTypes: [RoomTypePayload!]!
+
+  """The address of the accommodation"""
+  address: Address!
+}
+
+input AddAccommodationInput
+  @join__type(graph: ACCOMMODATIONS)
+{
+  name: String!
+  description: String!
+  address: AddressInput!
+}
+
+"""The address of an accommodation."""
+type Address
+  @join__type(graph: ACCOMMODATIONS)
+{
+  """The street"""
+  street: String!
+
+  """
+  House number.
+  Range: 0 - 15635
+  """
+  houseNumber: Int!
+
+  """Zip code"""
+  zipCode: String!
+
+  """City"""
+  city: String!
+
+  """Optional area"""
+  area: String
+
+  """ISO country code"""
+  country: CountryCode!
+}
+
+"""The address of an accommodation."""
+input AddressInput
+  @join__type(graph: ACCOMMODATIONS)
+{
+  """The street"""
+  street: String!
+
+  """
+  House number.
+  Range: 0 - 15635
+  """
+  houseNumber: Int!
+
+  """Zip code"""
+  zipCode: String!
+
+  """City"""
+  city: String!
+
+  """Optional area"""
+  area: String
+
+  """ISO country code"""
+  country: CountryCode!
+}
+
+input AddUserInput
+  @join__type(graph: USERS)
+{
+  name: String!
+  email: String!
+  country: CountryCode!
+}
+
+"""Types of beds."""
+enum BedType
+  @join__type(graph: ACCOMMODATIONS)
+{
+  SINGLE
+  TWIN_SINGLE
+  DOUBLE
+  KING
+}
+
+"""The country where the accommodation is."""
+enum CountryCode
+  @join__type(graph: ACCOMMODATIONS)
+  @join__type(graph: USERS)
+{
+  DE
+  US
+}
+
+input CreateRoomTypeInput
+  @join__type(graph: ACCOMMODATIONS)
+{
+  accommodationId: UUID!
+  size: Int!
+  balcony: Boolean!
+  bedType: BedType!
+  tv: Boolean!
+  wifi: Boolean!
+}
+
+scalar join__FieldSet
+
+enum join__Graph {
+  ACCOMMODATIONS @join__graph(name: "accommodations", url: "http://localhost:3005/graphql")
+  USERS @join__graph(name: "users", url: "http://localhost:3000/graphql")
+}
+
+scalar link__Import
+
+enum link__Purpose {
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+
+  """
+  `EXECUTION` features provide metadata necessary for operation execution.
+  """
+  EXECUTION
+}
+
+type Mutation
+  @join__type(graph: ACCOMMODATIONS)
+  @join__type(graph: USERS)
+{
+  addAccommodation(input: AddAccommodationInput!): AccommodationPayload! @join__field(graph: ACCOMMODATIONS)
+  updateAccommodation(input: UpdateAccommodationInput!): AccommodationPayload! @join__field(graph: ACCOMMODATIONS)
+  addRoomType(input: CreateRoomTypeInput!): RoomTypePayload! @join__field(graph: ACCOMMODATIONS)
+  updateRoomType(input: UpdateRoomTypeInput!): RoomTypePayload! @join__field(graph: ACCOMMODATIONS)
+  deleteRoomType(roomTypeId: UUID!): Boolean! @join__field(graph: ACCOMMODATIONS)
+  addUser(input: AddUserInput!): UserPayload! @join__field(graph: USERS)
+}
+
+type PhoneNumberPayload
+  @join__type(graph: USERS)
+{
+  """Country code"""
+  countryCode: String!
+
+  """Call number"""
+  callNumber: String!
+
+  """Type of phone number"""
+  phoneNumberType: PhoneNumberType!
+}
+
+"""Types of phone numbers."""
+enum PhoneNumberType
+  @join__type(graph: USERS)
+{
+  BUSINESS
+  HOME
+  MOBILE
+}
+
+type Query
+  @join__type(graph: ACCOMMODATIONS)
+  @join__type(graph: USERS)
+{
+  """
+  Get a list of accommodations.
+  Accommodations can be filtered by name and country.
+  """
+  accommodations(name: String, country: CountryCode): [AccommodationPayload!]! @join__field(graph: ACCOMMODATIONS)
+
+  """
+  Get a list of users.
+  Users can be filtered by identifier.
+  """
+  users(userIds: [UUID!]): [UserPayload!]! @join__field(graph: USERS)
+}
+
+type RoomTypePayload
+  @join__type(graph: ACCOMMODATIONS)
+{
+  """Technical identifier of the room type"""
+  id: UUID!
+
+  """Size of the room"""
+  size: Int!
+
+  """Room has a balcony"""
+  balcony: Boolean!
+
+  """Type of bed in the room"""
+  bedType: BedType!
+
+  """Room has a tv"""
+  tv: Boolean!
+
+  """Room has wifi"""
+  wifi: Boolean!
+}
+
+input UpdateAccommodationInput
+  @join__type(graph: ACCOMMODATIONS)
+{
+  id: UUID!
+  version: Int!
+  name: String
+  description: String
+  address: AddressInput
+}
+
+input UpdateRoomTypeInput
+  @join__type(graph: ACCOMMODATIONS)
+{
+  id: UUID!
+  size: Int
+  balcony: Boolean
+  bedType: BedType
+  tv: Boolean
+  wifi: Boolean
+}
+
+"""A user with all of its properties."""
+type UserPayload
+  @join__type(graph: USERS)
+{
+  """Technical identifier of the user"""
+  id: UUID!
+
+  """Technical version of the user"""
+  version: Int!
+
+  """The name of the user."""
+  name: String!
+
+  """The country"""
+  country: CountryCode!
+
+  """The email address"""
+  email: String!
+
+  """List of phone_numbers."""
+  phoneNumbers: [PhoneNumberPayload!]!
+}
+
+"""
+A UUID is a unique 128-bit number, stored as 16 octets. UUIDs are parsed as
+Strings within GraphQL. UUIDs are used to assign unique identifiers to
+entities without requiring a central allocating authority.
+
+# References
+
+* [Wikipedia: Universally Unique Identifier](http://en.wikipedia.org/wiki/Universally_unique_identifier)
+* [RFC4122: A Universally Unique IDentifier (UUID) URN Namespace](http://tools.ietf.org/html/rfc4122)
+"""
+scalar UUID
+  @join__type(graph: ACCOMMODATIONS)
+  @join__type(graph: USERS)

@@ -1,5 +1,8 @@
 target
 Cargo.lock
 
+# Apollo-Router
+router
+
 # Mac
 .DS_Store

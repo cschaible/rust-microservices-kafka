@@ -32,6 +32,7 @@ pub fn routing(context: DynContext) -> Router {
         DataLoader::new(PhoneNumberLoader::new(context.clone()), tokio::task::spawn);
 
     let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+        .enable_federation()
         .data(context)
         .data(phone_number_loader)
         // TODO check if "Tracing" extension can log errors properly

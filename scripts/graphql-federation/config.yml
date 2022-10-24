@@ -1,0 +1,35 @@
+cors:
+  allow_any_origin: true
+
+health-check:
+  listen: 127.0.0.1:4001
+  enabled: true
+
+homepage:
+  enabled: false
+
+sandbox:
+  enabled: true
+
+supergraph:
+  listen: 0.0.0.0:4000
+  introspection: true
+
+telemetry:
+  tracing:
+    trace_config:
+      service_name: "router"
+      service_namespace: "apollo"
+      # Optional. Either a float between 0 and 1 or 'always_on' or 'always_off'
+      sampler: 'always_on'
+    jaeger:
+      agent:
+        # Either 'default' or a URL
+        endpoint: 'default'
+    propagation:
+      jaeger: false
+      zipkin: true
+
+override_subgraph_url:
+  users: http://localhost:3000/graphql
+  accommodations: http://localhost:3005/graphql
