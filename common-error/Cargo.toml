@@ -8,15 +8,22 @@ license = "MIT"
 
 [dependencies]
 anyhow = "1.0"
-apache-avro = "0.14.0"
-async-graphql = { version = "4.0.12", features = ["dataloader", "opentelemetry", "tracing", "uuid"] }
+apache-avro = { version = "0.14.0", optional = true }
+async-graphql = { version = "4.0.12", features = ["dataloader", "opentelemetry", "tracing", "uuid"], optional = true }
 axum = "0.5.0"
 config = "0.13.2"
-mongodb = "2.3.0"
-rdkafka = "0.28.0"
-schema_registry_converter = { git = "https://github.com/gklijs/schema_registry_converter", branch = "main", features = ["avro"] }
-sea-orm = { version = "0.9.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false }
-sea-orm-migration = { version = "0.9.2", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
+mongodb = { version = "2.3.0", optional = true }
+rdkafka = { version = "0.28.0", optional = true }
+schema_registry_converter = { git = "https://github.com/gklijs/schema_registry_converter", branch = "main", features = ["avro"], optional = true }
+sea-orm = { version = "0.9.3", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-uuid"], default-features = false, optional = true }
+sea-orm-migration = { version = "0.9.2", features = ["sqlx-postgres", "runtime-tokio-rustls"], optional = true }
 serde_json = "1.0.79"
-tokio-cron-scheduler = { version = "0.8.1", features = ["signal"] }
+tokio-cron-scheduler = { version = "0.8.1", features = ["signal"], optional = true }
 tracing = "0.1"
+
+[features]
+grapqhl = ["dep:async-graphql"]
+kafka = ["dep:apache-avro", "dep:rdkafka", "dep:schema_registry_converter"]
+mongodb = ["dep:mongodb"]
+relationaldb = ["dep:sea-orm", "dep:sea-orm-migration"]
+scheduler = ["dep:tokio-cron-scheduler"]
