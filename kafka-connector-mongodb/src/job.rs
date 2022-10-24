@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use common_error::AppError;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
 use tokio::sync::Mutex;
@@ -13,46 +14,47 @@ pub async fn poll_and_send(
     tx_context: &mut TransactionalContext,
     producer: Arc<FutureProducer>,
     tracing_propagator: Arc<Propagator>,
-) {
+) -> Result<(), AppError> {
     let lock = job_synchronization_mutex.try_lock();
+
     if lock.is_ok() {
         let mut more_events_to_send = true;
         while more_events_to_send {
             more_events_to_send =
-                find_send_delete(tx_context, producer.clone(), tracing_propagator.clone()).await;
+                find_send_delete(tx_context, producer.clone(), tracing_propagator.clone()).await?;
         }
     }
+
+    Ok(())
 }
 
 async fn find_send_delete(
     tx_context: &mut TransactionalContext,
     producer: Arc<FutureProducer>,
     tracing_propagator: Arc<Propagator>,
-) -> bool {
+) -> Result<bool, AppError> {
     let event_list = event_service::find_next_page(tx_context).await;
 
     match event_list {
         Ok(events) => {
             // Skip further processing if there are no events to send
             if events.events.is_empty() {
-                return false;
+                return Ok(false);
             }
 
             // Send data
             event_service::send_to_kafka(producer.clone(), tracing_propagator.clone(), &events)
-                .await;
+                .await?;
 
             // Delete sent events
-            event_service::delete_from_db(tx_context, &events)
-                .await
-                .expect("Delete of sent events from database failed");
+            event_service::delete_from_db(tx_context, &events).await?;
 
             // Send signal to continue without waiting
-            events.has_more
+            Ok(events.has_more)
         }
         Err(e) => {
             error!("Error occurred while sending events to kafka: {:?}", e);
-            false
+            Ok(false)
         }
     }
 }

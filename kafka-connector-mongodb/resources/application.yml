@@ -1,0 +1,24 @@
+database:
+  connection:
+    pool:
+      min: 1
+      max: 10
+    #Optional parameters
+    # connect_timeout:
+    # idle_timeout:
+
+logging:
+  level:
+    root: warn
+    directives:
+      - namespace: kafka_connector_mongodb
+        level: debug
+      - namespace: kafka_connector_mongodb::event
+        level: trace
+      - namespace: common_error
+        level: trace
+      - namespace: tower_http
+        level: debug
+
+server:
+  port: 3006
