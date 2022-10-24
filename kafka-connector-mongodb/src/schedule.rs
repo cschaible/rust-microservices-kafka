@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use common_error::AppError;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
 use tokio::sync::Mutex;
@@ -15,12 +16,8 @@ pub async fn run_scheduled_job(
     context: DynContext,
     producer: Arc<FutureProducer>,
     tracing_propagator: Arc<Propagator>,
-) {
+) -> Result<(), AppError> {
     let job_synchronization_mutex = Arc::new(Mutex::new(false));
-
-    let scheduler = JobScheduler::new()
-        .await
-        .expect("Job scheduler couldn't be instantiated");
 
     let job = Job::new_repeated_async(Duration::from_secs(1), move |_job_id, _lock| {
         let p_job_synchronization_mutex = job_synchronization_mutex.clone();
@@ -33,6 +30,7 @@ pub async fn run_scheduled_job(
                 let p_inner_job_synchronization_mutex = p_job_synchronization_mutex.clone();
                 let p_inner_producer = p_producer.clone();
                 let p_inner_tracing_propagator = p_tracing_propagator.clone();
+
                 Box::pin(async move {
                     job::poll_and_send(
                         p_inner_job_synchronization_mutex,
@@ -40,21 +38,23 @@ pub async fn run_scheduled_job(
                         p_inner_producer.clone(),
                         p_inner_tracing_propagator.clone(),
                     )
-                    .await;
+                    .await
+                    .expect("Scheduled job failed");
                     Ok(())
                 })
             })
             .await
-            .expect("Sending events failed");
+            .expect("Transaction in scheduled job failed");
         })
-    })
-    .expect("Job couldn't be instantiated");
-    scheduler.add(job).await.expect("Job couldn't be scheduled");
+    })?;
+
+    let scheduler = JobScheduler::new().await?;
+    scheduler.add(job).await?;
 
     #[cfg(feature = "signal")]
     scheduler.shutdown_on_ctrl_c();
-    scheduler
-        .start()
-        .await
-        .expect("Job scheduler couldn't be started");
+
+    scheduler.start().await?;
+
+    Ok(())
 }

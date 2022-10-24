@@ -1,0 +1,11 @@
+database:
+  url: mongodb://localhost:27017/accommodation-service?replicaSet=replica-set-1
+
+kafka:
+  broker:
+    urls: localhost:9092
+  producer:
+    client_id: kafka-connector-mongodb
+    transactional_id: kafka-connector-mongodb
+  schema_registry:
+    url: http://localhost:8081
