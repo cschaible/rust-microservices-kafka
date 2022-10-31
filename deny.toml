@@ -135,6 +135,20 @@ license-files = [
     { path = "LICENSE", hash = 0x001c7e6c }
 ]
 
+[[licenses.clarify]]
+name = "zerocopy"
+expression = "BSD-2-Clause"
+license-files = [
+    { path = "LICENSE", hash = 0x336921c7 }
+]
+
+[[licenses.clarify]]
+name = "zerocopy-derive"
+expression = "BSD-2-Clause"
+license-files = [
+    { path = "LICENSE", hash = 0x336921c7 }
+]
+
 [licenses.private]
 # If true, ignores workspace crates that aren't published, or are only
 # published to private registries.
