@@ -23,44 +23,12 @@ services:
     restart: always
     hostname: mongodb1
     container_name: mongodb1
-    expose:
-      - 27017
     ports:
       - "27017:27017"
     #environment:
     #  MONGO_INITDB_ROOT_USERNAME: demouser
     #  MONGO_INITDB_ROOT_PASSWORD: secret
     command: mongod --replSet replica-set-1
-    mem_limit: 768m
-
-  mongodb2:
-    image: mongo:6.0.2
-    restart: always
-    hostname: mongodb2
-    container_name: mongodb2
-    expose:
-      - 27017
-    ports:
-      - "27018:27017"
-    #environment:
-    #  MONGO_INITDB_ROOT_USERNAME: demouser
-    #  MONGO_INITDB_ROOT_PASSWORD: secret
-    command: mongod --replSet replica-set-1
-    mem_limit: 768m
-
-  mongodb3:
-    image: mongo:6.0.2
-    restart: always
-    hostname: mongodb3
-    container_name: mongodb3
-    expose:
-      - 27017
-    ports:
-      - "27019:27017"
-    command: mongod --replSet replica-set-1
-    #environment:
-    #  MONGO_INITDB_ROOT_USERNAME: demouser
-    #  MONGO_INITDB_ROOT_PASSWORD: secret
     mem_limit: 768m
 
   mongoinit:
@@ -71,8 +39,6 @@ services:
     container_name: minit
     depends_on:
       - mongodb1
-      - mongodb2
-      - mongodb3
     command: >
       mongosh --host mongodb1:27017 --eval 
       '
@@ -83,14 +49,6 @@ services:
         {
           "_id" : 0,
           "host" : "mongodb1:27017"
-        },
-        {
-          "_id" : 1,
-          "host" : "mongodb2:27017"
-        },
-        {
-          "_id" : 2,
-          "host" : "mongodb3:27017"
         }
       ]
       };
