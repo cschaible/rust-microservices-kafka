@@ -1,6 +1,6 @@
 use anyhow::Result;
 use projections::PhoneNumberUserIdentifierProjection;
-use sea_orm::ConnectionTrait;
+use sea_orm::DatabaseTransaction;
 
 use self::user_resource::UserResource;
 use crate::common::paging::Page;
@@ -11,29 +11,29 @@ use crate::user::service::phone_number_service;
 pub mod phone_number_resource;
 pub mod user_resource;
 
-pub async fn build_user_resource<T: ConnectionTrait + Sized>(
-    connection: &T,
+pub async fn build_user_resource(
+    db_connection: &DatabaseTransaction,
     user: user::Model,
 ) -> Result<UserResource> {
-    Ok(build_resources(connection, vec![user])
+    Ok(build_resources(db_connection, vec![user])
         .await?
         .first()
         .expect("User resource conversion failed")
         .to_owned())
 }
 
-pub async fn build_user_resources<T: ConnectionTrait + Sized>(
-    connection: &T,
+pub async fn build_user_resources(
+    db_connection: &DatabaseTransaction,
     users: Vec<user::Model>,
 ) -> Result<Vec<UserResource>> {
-    build_resources(connection, users).await
+    build_resources(db_connection, users).await
 }
 
-pub async fn build_user_resource_page_from_page<T: ConnectionTrait + Sized>(
-    connection: &T,
+pub async fn build_user_resource_page_from_page(
+    db_connection: &DatabaseTransaction,
     user_page: Page<user::Model>,
 ) -> Result<Page<UserResource>> {
-    let user_resources = build_resources(connection, user_page.items).await?;
+    let user_resources = build_resources(db_connection, user_page.items).await?;
 
     Ok(Page {
         items: user_resources,
@@ -44,11 +44,11 @@ pub async fn build_user_resource_page_from_page<T: ConnectionTrait + Sized>(
     })
 }
 
-pub async fn build_user_resource_page_from_vec<T: ConnectionTrait + Sized>(
-    connection: &T,
+pub async fn build_user_resource_page_from_vec(
+    db_connection: &DatabaseTransaction,
     users: Vec<user::Model>,
 ) -> Result<Page<UserResource>> {
-    let user_resources = build_resources(connection, users).await?;
+    let user_resources = build_resources(db_connection, users).await?;
 
     Ok(Page {
         items: user_resources,
@@ -59,13 +59,13 @@ pub async fn build_user_resource_page_from_vec<T: ConnectionTrait + Sized>(
     })
 }
 
-async fn build_resources<T: ConnectionTrait + Sized>(
-    connection: &T,
+async fn build_resources(
+    db_connection: &DatabaseTransaction,
     users: Vec<user::Model>,
 ) -> Result<Vec<UserResource>> {
     let user_identifiers = users.iter().map(|u| u.identifier).collect();
     let phone_numbers_by_user_id =
-        phone_number_service::find_all_by_user_identifiers(connection, user_identifiers).await?;
+        phone_number_service::find_all_by_user_identifiers(db_connection, user_identifiers).await?;
 
     let user_resources: Vec<UserResource> = users
         .into_iter()

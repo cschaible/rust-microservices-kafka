@@ -1,47 +1,46 @@
 use anyhow::Result;
 use common_error::AppError;
 use sea_orm::entity::prelude::*;
-use sea_orm::ConnectionTrait;
+use sea_orm::DatabaseTransaction;
 use sea_orm::QueryOrder;
 use tracing::instrument;
 
 use super::super::model::user;
 use super::super::model::user::Entity as UserEntity;
-use crate::common::context::TransactionalContext;
 use crate::common::paging::Page;
 use crate::common::paging::PageParams;
 
 #[instrument(name = "user_service.create_user", skip_all)]
 pub async fn create_user(
-    tx_context: &TransactionalContext,
+    db_connection: &DatabaseTransaction,
     user: &user::ActiveModel,
 ) -> Result<user::Model, AppError> {
     tracing::debug!("Save user with identifier: {:?}", user.identifier);
-    Ok(user.clone().insert(tx_context.db_connection()).await?)
+    Ok(user.clone().insert(db_connection).await?)
 }
 
-#[instrument(name = "user_service.find_one_by_identifier", skip(connection))]
-pub async fn find_one_by_identifier<'a, T: ConnectionTrait + Sized>(
-    connection: &T,
+#[instrument(name = "user_service.find_one_by_identifier", skip(db_connection))]
+pub async fn find_one_by_identifier(
+    db_connection: &DatabaseTransaction,
     identifier: Uuid,
 ) -> Result<Option<user::Model>> {
     Ok(UserEntity::find()
         .filter(user::Column::Identifier.eq(identifier))
-        .one(connection)
+        .one(db_connection)
         .await?)
 }
 
 #[instrument(name = "user_service.find_all", skip_all)]
-pub async fn find_all<T: ConnectionTrait + Sized>(connection: &T) -> Result<Vec<user::Model>> {
+pub async fn find_all(db_connection: &DatabaseTransaction) -> Result<Vec<user::Model>> {
     Ok(UserEntity::find()
         .order_by_asc(user::Column::Identifier)
-        .all(connection)
+        .all(db_connection)
         .await?)
 }
 
-#[instrument(name = "user_service.find_all_paged", skip(connection))]
-pub async fn find_all_paged<T: ConnectionTrait + Sized>(
-    connection: &T,
+#[instrument(name = "user_service.find_all_paged", skip(db_connection))]
+pub async fn find_all_paged(
+    db_connection: &DatabaseTransaction,
     page_params: PageParams,
 ) -> Result<Page<user::Model>> {
     // Extract page parameters from the request
@@ -49,12 +48,12 @@ pub async fn find_all_paged<T: ConnectionTrait + Sized>(
     let page = page_params.page.unwrap_or(0);
 
     // Count query
-    let total_elements = UserEntity::find().count(connection).await?;
+    let total_elements = UserEntity::find().count(db_connection).await?;
 
     // Find query
     let users: Vec<user::Model> = UserEntity::find()
         .order_by_asc(user::Column::Identifier)
-        .paginate(connection, page_size)
+        .paginate(db_connection, page_size)
         .fetch_page(page)
         .await?;
 
@@ -69,14 +68,14 @@ pub async fn find_all_paged<T: ConnectionTrait + Sized>(
     })
 }
 
-#[instrument(name = "user_service.find_all_by_identifiers", skip(connection))]
-pub async fn find_all_by_identifiers<T: ConnectionTrait + Sized>(
-    connection: &T,
+#[instrument(name = "user_service.find_all_by_identifiers", skip(db_connection))]
+pub async fn find_all_by_identifiers(
+    db_connection: &DatabaseTransaction,
     user_identifiers: Vec<Uuid>,
 ) -> Result<Vec<user::Model>> {
     Ok(UserEntity::find()
         .filter(user::Column::Identifier.is_in(user_identifiers))
         .order_by_asc(user::Column::Identifier)
-        .all(connection)
+        .all(db_connection)
         .await?)
 }

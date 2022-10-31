@@ -4,12 +4,12 @@ use std::sync::Arc;
 use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
+use common_db::pool;
 use common_error::AppError;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
 
 use crate::common::api::health;
-use crate::common::db;
 use crate::common::kafka::init_producer;
 use crate::common::server::shutdown_signal;
 use crate::config::configuration::Configuration;
@@ -33,7 +33,7 @@ async fn main() -> Result<(), AppError> {
     logging_tracing::init(&config)?;
 
     // Initialize db connection pool
-    let connection_pool = Arc::new(db::init_pool(&config.database).await?);
+    let connection_pool = Arc::new(pool::init(&config.database).await?);
 
     // Initialize kafka producer
     let producer = Arc::new(init_producer(&config.kafka)?);

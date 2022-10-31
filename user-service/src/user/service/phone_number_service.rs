@@ -5,7 +5,7 @@ use common_error::AppError;
 use itertools::Itertools;
 use sea_orm::entity::*;
 use sea_orm::ColumnTrait;
-use sea_orm::ConnectionTrait;
+use sea_orm::DatabaseTransaction;
 use sea_orm::DeriveColumn;
 use sea_orm::EntityTrait;
 use sea_orm::EnumIter;
@@ -22,13 +22,13 @@ use crate::user::model::projections::PhoneNumberUserIdentifierProjection;
 use crate::user::model::user;
 
 #[instrument(name = "phone_number_service.save", skip_all)]
-pub async fn save<T: ConnectionTrait + Sized>(
-    connection: &T,
+pub async fn save(
+    db_connection: &DatabaseTransaction,
     phone_numbers: Vec<phone_number::ActiveModel>,
 ) -> Result<(), AppError> {
     if !phone_numbers.is_empty() {
         phone_number::Entity::insert_many(phone_numbers)
-            .exec(connection)
+            .exec(db_connection)
             .await?;
     }
 
@@ -36,8 +36,8 @@ pub async fn save<T: ConnectionTrait + Sized>(
 }
 
 #[instrument(name = "phone_number_service.find_all_by_user_identifiers", skip_all)]
-pub async fn find_all_by_user_identifiers<T: ConnectionTrait + Sized>(
-    connection: &T,
+pub async fn find_all_by_user_identifiers(
+    db_connection: &DatabaseTransaction,
     user_identifiers: Vec<Uuid>,
 ) -> Result<HashMap<Uuid, Vec<PhoneNumberUserIdentifierProjection>>> {
     let phone_numbers = PhoneNumberEntity::find()
@@ -45,7 +45,7 @@ pub async fn find_all_by_user_identifiers<T: ConnectionTrait + Sized>(
         .filter(user::Column::Identifier.is_in(user_identifiers))
         .column_as(user::Column::Identifier, QueryAs::UserIdentifier)
         .into_model::<PhoneNumberUserIdentifierProjection>()
-        .all(connection)
+        .all(db_connection)
         .await?;
 
     Ok(phone_numbers
