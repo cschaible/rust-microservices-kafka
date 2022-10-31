@@ -1,16 +1,16 @@
+use common_db_mongodb::util::get_collection;
 use common_error::AppError;
 use mongodb::options::InsertOneOptions;
+use mongodb::ClientSession;
 use mongodb::Collection;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::common::context::TransactionalContext;
-use crate::common::db::get_collection;
 use crate::user::model::Model;
 
 #[instrument(name = "accommodation_service.create_user", skip_all)]
 pub async fn create_user(
-    tx_context: &mut TransactionalContext,
+    db_session: &ClientSession,
     identifier: Uuid,
     version: i64,
     name: String,
@@ -21,7 +21,7 @@ pub async fn create_user(
         name,
     };
 
-    let collection: Collection<Model> = get_collection::<Model>(tx_context, "user");
+    let collection: Collection<Model> = get_collection::<Model>(db_session, "user");
 
     collection
         .insert_one(user, InsertOneOptions::default())

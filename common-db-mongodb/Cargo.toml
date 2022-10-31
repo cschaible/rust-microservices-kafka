@@ -1,0 +1,18 @@
+[package]
+name = "common-db-mongodb"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = false
+
+[dependencies]
+async-trait = "0.1.52"
+common-error = { path = "../common-error", features = ["mongodb"] }
+futures = "0.3.21"
+mongodb = "2.3.0"
+serde = "1.0.136"
+tracing = "0.1"

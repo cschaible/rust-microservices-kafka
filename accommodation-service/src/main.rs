@@ -9,6 +9,7 @@ use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
+use common_db_mongodb::pool;
 use common_error::AppError;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
@@ -50,8 +51,8 @@ async fn main() -> Result<(), AppError> {
     logging_tracing::init(&config)?;
 
     // Init db client and create indexes
-    let db_client = db::init_db_client(&config.database).await?;
-    db::create_indexes(&db_client).await?;
+    let db_client = Arc::new(pool::init_db_client(&config.database).await?);
+    db::create_indexes(db_client.clone()).await?;
 
     // Initialize schema decoder
     let avro_decoder = AvroRecordDecoder::new(&config.kafka)?;
@@ -72,7 +73,7 @@ async fn main() -> Result<(), AppError> {
     // Construct request context
     let context = ContextImpl::new_dyn_context(
         Arc::new(avro_decoder),
-        Arc::new(db_client),
+        db_client,
         Arc::new(event_dispatcher),
     );
 

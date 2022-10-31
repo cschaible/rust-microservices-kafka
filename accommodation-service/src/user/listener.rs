@@ -2,6 +2,7 @@ use std::panic;
 use std::sync::Arc;
 
 use apache_avro::schema::Name;
+use common_db_mongodb::transaction::transactional;
 use kafka_schema_common::schema_key::KeyAvro;
 use kafka_schema_user::schema_create_user::CreateUserAvro;
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
@@ -25,7 +26,6 @@ use tracing_common::get_context_from_b3;
 // use tracing_common::B3SpanExt;
 use uuid::Uuid;
 
-use crate::common::db::transactional2;
 use crate::config::configuration::ConsumerConfiguration;
 use crate::config::configuration::KafkaConfiguration;
 use crate::user;
@@ -106,13 +106,13 @@ pub async fn do_listen(
                     // debug!("Key: {:?}", key);
                     // debug!("Value: {:?}", payload);
 
-                    if let Err(e) = transactional2(context.clone(), |tx_context| {
+                    if let Err(e) = transactional(context.db_client(), |db_session| {
                         let identifier: Uuid = payload.identifier.parse().expect("Invalid UUID");
                         let version: i64 = key.identifier.version;
                         let name: String = payload.name.clone();
 
                         Box::pin(async move {
-                            match user::service::create_user(tx_context, identifier, version, name)
+                            match user::service::create_user(db_session, identifier, version, name)
                                 .await
                             {
                                 Ok(_) => Ok(()),

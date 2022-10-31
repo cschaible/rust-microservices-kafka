@@ -3,6 +3,7 @@
 members = [
     "accommodation-service",
     "common-db",
+    "common-db-mongodb",
     "common-error",
     "kafka-schema-accommodation",
     "kafka-common",

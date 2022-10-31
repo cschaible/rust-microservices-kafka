@@ -1,28 +1,28 @@
 use bson;
 use bson::doc;
 use bson::Document;
+use common_db_mongodb::util::get_collection;
 use common_error::AppError;
 use futures::TryStreamExt;
 use mongodb::options::FindOneOptions;
 use mongodb::options::FindOptions;
 use mongodb::options::InsertOneOptions;
 use mongodb::options::UpdateOptions;
+use mongodb::ClientSession;
 use mongodb::Collection;
 use tracing::instrument;
 use uuid::Uuid;
 
 use crate::accommodation::api::shared::types::CountryCode;
 use crate::accommodation::model::Accommodation;
-use crate::common::context::TransactionalContext;
-use crate::common::db::get_collection;
 use crate::common::model::IsoCountryCodeEnum;
 
 #[instrument(name = "accommodation_service.create_accommodation", skip_all)]
 pub async fn create_accommodation(
-    tx_context: &mut TransactionalContext,
+    db_session: &ClientSession,
     accommodation: Accommodation,
 ) -> Result<(), AppError> {
-    get_accommodation_collection(tx_context)
+    get_accommodation_collection(db_session)
         .insert_one(accommodation, InsertOneOptions::default())
         .await?;
 
@@ -31,7 +31,7 @@ pub async fn create_accommodation(
 
 #[instrument(name = "accommodation_service.update_accommodation", skip_all)]
 pub async fn update_accommodation(
-    tx_context: &mut TransactionalContext,
+    db_session: &ClientSession,
     accommodation: Accommodation,
 ) -> Result<(), AppError> {
     let filter = id_filter(accommodation.id);
@@ -39,7 +39,7 @@ pub async fn update_accommodation(
         "$set": bson::to_bson(&accommodation)?
     };
 
-    get_accommodation_collection(tx_context)
+    get_accommodation_collection(db_session)
         .update_one(filter, update, UpdateOptions::default())
         .await?;
 
@@ -48,12 +48,12 @@ pub async fn update_accommodation(
 
 #[instrument(name = "accommodation_service.find_accommodation", skip_all)]
 pub async fn find_accommodation(
-    tx_context: &mut TransactionalContext,
+    db_session: &ClientSession,
     id: Uuid,
 ) -> Result<Option<Accommodation>, AppError> {
     let filter = id_filter(id);
 
-    let accommodation = get_accommodation_collection(tx_context)
+    let accommodation = get_accommodation_collection(db_session)
         .find_one(filter, FindOneOptions::default())
         .await?;
 
@@ -62,7 +62,7 @@ pub async fn find_accommodation(
 
 #[instrument(name = "accommodation_service.find_accommodations", skip_all)]
 pub async fn find_accommodations(
-    tx_context: &mut TransactionalContext,
+    db_session: &ClientSession,
     name: Option<String>,
     country: Option<CountryCode>,
 ) -> Result<Vec<Accommodation>, AppError> {
@@ -80,7 +80,7 @@ pub async fn find_accommodations(
         filter.insert("address.country", country_code);
     }
 
-    let cursor = get_accommodation_collection(tx_context)
+    let cursor = get_accommodation_collection(db_session)
         .find(filter, FindOptions::default())
         .await?;
 
@@ -89,10 +89,8 @@ pub async fn find_accommodations(
     Ok(accommodations)
 }
 
-fn get_accommodation_collection(
-    tx_context: &mut TransactionalContext,
-) -> Collection<Accommodation> {
-    get_collection::<Accommodation>(tx_context, "accommodation")
+fn get_accommodation_collection(db_session: &ClientSession) -> Collection<Accommodation> {
+    get_collection::<Accommodation>(db_session, "accommodation")
 }
 
 fn id_filter(id: Uuid) -> Document {

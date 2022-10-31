@@ -9,7 +9,6 @@ use tokio_cron_scheduler::Job;
 use tokio_cron_scheduler::JobScheduler;
 
 use crate::common::context::DynContext;
-use crate::common::db::transactional2;
 use crate::job;
 
 pub async fn run_scheduled_job(
@@ -23,28 +22,17 @@ pub async fn run_scheduled_job(
         let p_job_synchronization_mutex = job_synchronization_mutex.clone();
         let p_producer = producer.clone();
         let p_tracing_propagator = tracing_propagator.clone();
-        let p_context = context.clone();
+        let db_client = context.db_client();
 
         Box::pin(async move {
-            transactional2(p_context, |tx| {
-                let p_inner_job_synchronization_mutex = p_job_synchronization_mutex.clone();
-                let p_inner_producer = p_producer.clone();
-                let p_inner_tracing_propagator = p_tracing_propagator.clone();
-
-                Box::pin(async move {
-                    job::poll_and_send(
-                        p_inner_job_synchronization_mutex,
-                        tx,
-                        p_inner_producer.clone(),
-                        p_inner_tracing_propagator.clone(),
-                    )
-                    .await
-                    .expect("Scheduled job failed");
-                    Ok(())
-                })
-            })
+            job::poll_and_send(
+                p_job_synchronization_mutex,
+                db_client,
+                p_producer.clone(),
+                p_tracing_propagator.clone(),
+            )
             .await
-            .expect("Transaction in scheduled job failed");
+            .expect("Scheduled job failed");
         })
     })?;
 

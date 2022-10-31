@@ -1,11 +1,11 @@
 use async_graphql::Context;
 use async_graphql::Object;
+use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
 
 use crate::accommodation::api::query::types::accommodation::AccommodationPayload;
 use crate::accommodation::api::shared::types::CountryCode;
 use crate::accommodation::service::accommodation_service::find_accommodations;
-use crate::common::db::transactional2;
 use crate::DynContext;
 
 #[derive(Default)]
@@ -22,11 +22,11 @@ impl AccommodationResolver {
         #[graphql(desc = "optional country filter")] country: Option<CountryCode>,
     ) -> Result<Vec<AccommodationPayload>, AppError> {
         let context = ctx.data_unchecked::<DynContext>();
-        let accommodations = transactional2(context.clone(), |tx| {
+        let accommodations = transactional(context.db_client(), |db_session| {
             let name_filter = name.clone();
             let country_filter = country;
             Box::pin(async move {
-                let accommodations = find_accommodations(tx, name_filter, country_filter)
+                let accommodations = find_accommodations(db_session, name_filter, country_filter)
                     .await?
                     .into_iter()
                     .map(AccommodationPayload)
