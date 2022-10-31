@@ -6,6 +6,7 @@ use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
+use common_db::pool;
 use common_error::AppError;
 use migration::Migrator;
 use tower::limit::ConcurrencyLimitLayer;
@@ -41,8 +42,8 @@ async fn main() -> Result<(), AppError> {
     logging_tracing::init(&config)?;
 
     // Initialize db connection pool and migrate database
-    let connection_pool = db::init_pool(&config.database).await?;
-    db::migrate(&connection_pool).await?;
+    let connection_pool = Arc::new(pool::init(&config.database).await?);
+    db::migrate(connection_pool.clone()).await?;
 
     // Initialize user schema encoder
     let user_event_converter: Arc<DynEventConverter> =
@@ -52,8 +53,7 @@ async fn main() -> Result<(), AppError> {
     let event_dispatcher = EventDispatcher::new(vec![user_event_converter]);
 
     // Construct request context
-    let context =
-        ContextImpl::new_dyn_context(Arc::new(connection_pool), Arc::new(event_dispatcher));
+    let context = ContextImpl::new_dyn_context(connection_pool, Arc::new(event_dispatcher));
 
     // Start the web-server
     start_web_server(&config.server, context).await;

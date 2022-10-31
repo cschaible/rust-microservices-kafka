@@ -1,5 +1,5 @@
 database:
-  url: postgres://demouser:secret@localhost:5432/demo
+  url: postgres://demouser:secret@localhost:5432/demo?application_name=user-service
 
 kafka:
   broker:

@@ -7,7 +7,7 @@ import kotlin.time.toJavaDuration
 class Configuration(port: Int) {
 
   val baseUrl = "http://localhost:$port"
-  val concurrentUsers = 3
+  val concurrentUsers = 10
   val rampUpDuration = Duration.parse("15s").toJavaDuration()
   val testDuration = Duration.parse("1m").toJavaDuration()
 

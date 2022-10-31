@@ -1,13 +1,13 @@
 use async_graphql::Context;
 use async_graphql::InputObject;
 use async_graphql::Object;
+use common_db::transaction::transactional;
 use common_error::AppError;
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
 use sea_orm::ActiveValue::Set;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::common::db::transactional2;
 use crate::event::service::dto::SerializableEventDto;
 use crate::user::api::create_kafka_events;
 use crate::user::api::graphql::query::types::user::UserPayload;
@@ -30,18 +30,25 @@ impl UserInput {
         input: AddUserInput,
     ) -> Result<UserPayload, AppError> {
         let context = ctx.data_unchecked::<DynContext>();
-        let saved_user = transactional2(context.clone(), |tx| {
+        let saved_user = transactional(context.db_connection(), |db_connection| {
+            let event_dispatcher = context.event_dispatcher();
             let user: user::ActiveModel = input.clone().into();
             Box::pin(async move {
                 // Save entity to database
-                let user = create_user(tx, &user).await?;
+                let user = create_user(db_connection, &user).await?;
 
                 // Create kafka events
                 let dto: Box<dyn SerializableEventDto> = Box::new(UserWithPhoneNumbersDto {
                     user: user.clone(),
                     phone_numbers: None,
                 });
-                create_kafka_events(tx, dto, SCHEMA_NAME_CREATE_USER).await?;
+                create_kafka_events(
+                    db_connection,
+                    event_dispatcher,
+                    dto,
+                    SCHEMA_NAME_CREATE_USER,
+                )
+                .await?;
 
                 Ok(user)
             })

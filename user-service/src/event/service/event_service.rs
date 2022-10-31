@@ -1,15 +1,15 @@
 use common_error::AppError;
 use sea_orm::ActiveModelTrait;
+use sea_orm::DatabaseTransaction;
 use sea_orm::Set;
 use tracing::instrument;
 use tracing_common::get_b3_trace_id;
 
 use super::dto::EventDto;
-use crate::common::context::TransactionalContext;
 use crate::event::model::event;
 
 #[instrument(name = "event.service.save", skip_all)]
-pub async fn save(tx_context: &TransactionalContext, event: &EventDto) -> Result<(), AppError> {
+pub async fn save(db_connection: &DatabaseTransaction, event: &EventDto) -> Result<(), AppError> {
     let trace_id = get_b3_trace_id();
 
     // Build the entity from dto
@@ -25,7 +25,7 @@ pub async fn save(tx_context: &TransactionalContext, event: &EventDto) -> Result
     tracing::debug!("Save event to topic: {:?}", e.topic);
 
     // Save entity
-    let _ = e.insert(tx_context.db_connection()).await?;
+    let _ = e.insert(db_connection).await?;
 
     Ok(())
 }

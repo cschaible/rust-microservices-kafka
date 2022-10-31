@@ -12,7 +12,7 @@ use rdkafka::producer::FutureRecord;
 use rdkafka::producer::Producer;
 use rdkafka::util::Timeout;
 use sea_orm::ColumnTrait;
-use sea_orm::ConnectionTrait;
+use sea_orm::DatabaseTransaction;
 use sea_orm::DeleteResult;
 use sea_orm::EntityTrait;
 use sea_orm::PaginatorTrait;
@@ -29,12 +29,12 @@ use super::super::model::event;
 use super::super::model::event::Entity as EventEntity;
 use crate::common::db::MAX_PAGE_SIZE;
 
-pub async fn find_next_page<T: ConnectionTrait + Sized>(connection: &T) -> Result<EventList> {
+pub async fn find_next_page(db_connection: &DatabaseTransaction) -> Result<EventList> {
     let page_size = MAX_PAGE_SIZE + 1;
 
     let events: Vec<event::Model> = EventEntity::find()
         .order_by_asc(event::Column::Id)
-        .paginate(connection, page_size)
+        .paginate(db_connection, page_size)
         .fetch_page(0)
         .await?;
 
@@ -47,8 +47,8 @@ pub async fn find_next_page<T: ConnectionTrait + Sized>(connection: &T) -> Resul
 }
 
 #[instrument(name = "kafka_connector.delete_events", skip_all, level = "trace")]
-pub async fn delete_from_db<T: ConnectionTrait + Sized>(
-    connection: &T,
+pub async fn delete_from_db(
+    db_connection: &DatabaseTransaction,
     events: &EventList,
 ) -> Result<u64> {
     let event_ids: Vec<i32> = events
@@ -58,13 +58,13 @@ pub async fn delete_from_db<T: ConnectionTrait + Sized>(
         .map(|e| e.id)
         .collect();
 
-    delete(connection, event_ids).await
+    delete(db_connection, event_ids).await
 }
 
-async fn delete<T: ConnectionTrait + Sized>(connection: &T, event_ids: Vec<i32>) -> Result<u64> {
+async fn delete(db_connection: &DatabaseTransaction, event_ids: Vec<i32>) -> Result<u64> {
     let result: DeleteResult = EventEntity::delete_many()
         .filter(event::Column::Id.is_in(event_ids))
-        .exec(connection)
+        .exec(db_connection)
         .await?;
 
     Ok(result.rows_affected)

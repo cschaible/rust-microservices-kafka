@@ -4,8 +4,8 @@ database:
       min: 1
       max: 10
     #Optional parameters
+    idle_timeout: 30
     # connect_timeout:
-    # idle_timeout:
     # max_lifetime:
   logging:
     enabled: false

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use common_db::transaction::transactional;
 use common_error::AppError;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
@@ -37,28 +38,40 @@ async fn find_send_delete(
     producer: Arc<FutureProducer>,
     tracing_propagator: Arc<Propagator>,
 ) -> Result<bool, AppError> {
-    let event_list = event_service::find_next_page(connection.as_ref()).await;
+    transactional(connection, |db_connection| {
+        let producer = producer.clone();
+        let tracing_propagator = tracing_propagator.clone();
 
-    match event_list {
-        Ok(events) => {
-            // Skip further processing if there are no events to send
-            if events.events.is_empty() {
-                return Ok(false);
+        Box::pin(async move {
+            let event_list = event_service::find_next_page(db_connection).await;
+
+            match event_list {
+                Ok(events) => {
+                    // Skip further processing if there are no events to send
+                    if events.events.is_empty() {
+                        return Ok(false);
+                    }
+
+                    // Send data
+                    event_service::send_to_kafka(
+                        producer.clone(),
+                        tracing_propagator.clone(),
+                        &events,
+                    )
+                    .await?;
+
+                    // Delete sent events
+                    event_service::delete_from_db(db_connection, &events).await?;
+
+                    // Send signal to continue without waiting
+                    Ok(events.has_more)
+                }
+                Err(e) => {
+                    error!("Error occurred while sending events to kafka: {:?}", e);
+                    Ok(false)
+                }
             }
-
-            // Send data
-            event_service::send_to_kafka(producer.clone(), tracing_propagator.clone(), &events)
-                .await?;
-
-            // Delete sent events
-            event_service::delete_from_db(connection.as_ref(), &events).await?;
-
-            // Send signal to continue without waiting
-            Ok(events.has_more)
-        }
-        Err(e) => {
-            error!("Error occurred while sending events to kafka: {:?}", e);
-            Ok(false)
-        }
-    }
+        })
+    })
+    .await
 }
