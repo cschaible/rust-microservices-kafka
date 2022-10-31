@@ -1,13 +1,8 @@
 use std::sync::Arc;
 
-use common_error::AppError;
-use mongodb::error::UNKNOWN_TRANSACTION_COMMIT_RESULT;
 use mongodb::Client;
-use mongodb::ClientSession;
 
 use crate::common::kafka::RecordDecoder;
-use crate::event::service::dto::EventDto;
-use crate::event::service::dto::SerializableEventDto;
 use crate::event::service::event_dispatcher::EventDispatcher;
 
 pub type DynContext = Arc<dyn Context>;
@@ -53,68 +48,4 @@ impl Context for ContextImpl {
     fn event_dispatcher(&self) -> Arc<EventDispatcher> {
         self.event_dispatcher.clone()
     }
-}
-
-pub struct TransactionalContext {
-    client: Arc<Client>,
-    db_session: ClientSession,
-    event_dispatcher: Arc<EventDispatcher>,
-}
-
-impl TransactionalContext {
-    fn new(
-        event_dispatcher: Arc<EventDispatcher>,
-        db_session: ClientSession,
-        client: Arc<Client>,
-    ) -> TransactionalContext {
-        TransactionalContext {
-            client,
-            db_session,
-            event_dispatcher,
-        }
-    }
-
-    pub async fn from_context(context: &DynContext) -> Result<TransactionalContext, AppError> {
-        let event_dispatcher = context.event_dispatcher().clone();
-        let db_client = context.db_client().clone();
-        let mut db_session = db_client.as_ref().start_session(None).await?;
-
-        db_session.start_transaction(None).await?;
-
-        let transactional_context = Self::new(event_dispatcher, db_session, db_client);
-        Ok(transactional_context)
-    }
-
-    pub fn db_client(&self) -> Arc<Client> {
-        self.client.clone()
-    }
-
-    pub async fn dispatch_events(
-        &self,
-        event_type: String,
-        event: Box<dyn SerializableEventDto>,
-    ) -> Result<Vec<EventDto>, AppError> {
-        self.event_dispatcher.dispatch(event_type, event).await
-    }
-}
-
-pub async fn commit_context<'a>(
-    transactional_context: &mut TransactionalContext,
-) -> Result<(), AppError> {
-    loop {
-        let result = transactional_context.db_session.commit_transaction().await;
-        if let Err(error) = result {
-            if !error.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
-                return Err(error.into());
-            }
-        } else {
-            return Ok(());
-        }
-    }
-}
-
-pub async fn rollback_context<'a>(
-    transactional_context: &mut TransactionalContext,
-) -> Result<(), AppError> {
-    Ok(transactional_context.db_session.abort_transaction().await?)
 }

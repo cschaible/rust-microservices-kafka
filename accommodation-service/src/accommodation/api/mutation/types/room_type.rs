@@ -1,6 +1,7 @@
 use async_graphql::Context;
 use async_graphql::InputObject;
 use async_graphql::Object;
+use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
 use kafka_schema_accommodation::schema_create_room_type::SCHEMA_NAME_CREATE_ROOM_TYPE;
@@ -8,6 +9,7 @@ use kafka_schema_accommodation::schema_delete_room_type::SCHEMA_NAME_DELETE_ROOM
 use kafka_schema_accommodation::schema_update_room_type::SCHEMA_NAME_UPDATE_ROOM_TYPE;
 use uuid::Uuid;
 
+use crate::accommodation::api::mutation::types::create_kafka_events;
 use crate::accommodation::api::query::types::room_type::RoomTypePayload;
 use crate::accommodation::api::shared::types::BedType;
 use crate::accommodation::model::RoomType;
@@ -15,10 +17,6 @@ use crate::accommodation::service::room_type_service::add_room_type;
 use crate::accommodation::service::room_type_service::delete_room_type;
 use crate::accommodation::service::room_type_service::find_room_type;
 use crate::accommodation::service::room_type_service::update_room_type;
-use crate::common::context::TransactionalContext;
-use crate::common::db::transactional2;
-use crate::event::service::dto::SerializableEventDto;
-use crate::event::service::event_service;
 use crate::DynContext;
 
 /// A type of room including properties.
@@ -33,15 +31,18 @@ impl RoomTypeInput {
         input: CreateRoomTypeInput,
     ) -> Result<RoomTypePayload, AppError> {
         let context = ctx.data_unchecked::<DynContext>();
-        let saved_room_type = transactional2(context.clone(), |tx| {
+        let saved_room_type = transactional(context.db_client(), |db_session| {
+            let event_dispatcher = context.event_dispatcher();
             let room_type: RoomType = input.clone().into();
+
             Box::pin(async move {
                 // Save entity to database
-                add_room_type(tx, room_type.clone()).await?;
+                add_room_type(db_session, room_type.clone()).await?;
 
                 // Create kafka events
                 create_kafka_events(
-                    tx,
+                    db_session,
+                    event_dispatcher,
                     Box::new(room_type.clone()),
                     SCHEMA_NAME_CREATE_ROOM_TYPE,
                 )
@@ -60,10 +61,12 @@ impl RoomTypeInput {
         input: UpdateRoomTypeInput,
     ) -> Result<RoomTypePayload, AppError> {
         let context = ctx.data_unchecked::<DynContext>();
-        let updated_room_type = transactional2(context.clone(), |tx| {
+        let updated_room_type = transactional(context.db_client(), |db_session| {
+            let event_dispatcher = context.event_dispatcher();
             let update = input.clone();
+
             Box::pin(async move {
-                let room_type = find_room_type(tx, update.id).await?;
+                let room_type = find_room_type(db_session, update.id).await?;
 
                 if let Some(mut room_type) = room_type {
                     // Save entity to database
@@ -82,11 +85,12 @@ impl RoomTypeInput {
                     if let Some(wifi) = update.wifi {
                         room_type.wifi = wifi;
                     }
-                    update_room_type(tx, room_type.clone()).await?;
+                    update_room_type(db_session, room_type.clone()).await?;
 
                     // Create kafka events
                     create_kafka_events(
-                        tx,
+                        db_session,
+                        event_dispatcher,
                         Box::new(room_type.clone()),
                         SCHEMA_NAME_UPDATE_ROOM_TYPE,
                     )
@@ -108,17 +112,20 @@ impl RoomTypeInput {
         room_type_id: Uuid,
     ) -> Result<bool, AppError> {
         let context = ctx.data_unchecked::<DynContext>();
-        let deleted_room = transactional2(context.clone(), |tx| {
+        let deleted_room = transactional(context.db_client(), |db_session| {
+            let event_dispatcher = context.event_dispatcher();
+
             Box::pin(async move {
-                let room_type = find_room_type(tx, room_type_id).await?;
+                let room_type = find_room_type(db_session, room_type_id).await?;
 
                 if let Some(room_type) = room_type {
                     // Delete from database
-                    let delete_result = delete_room_type(tx, room_type.id).await?;
+                    let delete_result = delete_room_type(db_session, room_type.id).await?;
 
                     // Create kafka events
                     create_kafka_events(
-                        tx,
+                        db_session,
+                        event_dispatcher,
                         Box::new(room_type.clone()),
                         SCHEMA_NAME_DELETE_ROOM_TYPE,
                     )
@@ -133,21 +140,6 @@ impl RoomTypeInput {
 
         Ok(deleted_room)
     }
-}
-
-async fn create_kafka_events(
-    tx: &mut TransactionalContext,
-    dto: Box<dyn SerializableEventDto>,
-    event_type: &str,
-) -> Result<(), AppError> {
-    let events = tx.dispatch_events(event_type.to_string(), dto).await?;
-
-    assert!(!events.is_empty());
-
-    for event in events {
-        event_service::save(tx, &event).await?;
-    }
-    Ok(())
 }
 
 #[derive(Clone, InputObject)]

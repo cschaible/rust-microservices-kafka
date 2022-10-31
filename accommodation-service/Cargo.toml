@@ -17,7 +17,7 @@ axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
 # Use "serde_with" feature to convert UUIDs to binary with subtype 4 (readable UUID in Mongodb Compass)
 bson = { version = "2.4.0", features = ["uuid-1", "serde_with"] }
 chrono = "0.4.19"
-common-db = { path = "../common-db" }
+common-db-mongodb = { path = "../common-db-mongodb" }
 common-error = { path = "../common-error", features = ["grapqhl", "mongodb", "kafka"] }
 config = "0.13.2"
 futures = "0.3.21"

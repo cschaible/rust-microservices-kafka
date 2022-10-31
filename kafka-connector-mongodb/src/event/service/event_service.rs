@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
+use common_db_mongodb::util::get_collection;
 use common_error::AppError;
 use futures::future;
 use futures::TryStreamExt;
@@ -9,6 +10,7 @@ use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::options::DeleteOptions;
 use mongodb::options::FindOptions;
+use mongodb::ClientSession;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use opentelemetry_propagator_b3::propagator::B3_SINGLE_HEADER;
 use rdkafka::message::OwnedHeaders;
@@ -24,15 +26,13 @@ use tracing::Level;
 use tracing_common::B3SpanExt;
 
 use super::super::model::event::Event;
-use crate::common::context::TransactionalContext;
-use crate::common::db::get_collection;
 use crate::common::db::MAX_PAGE_SIZE;
 
-pub async fn find_next_page(tx_context: &mut TransactionalContext) -> Result<EventList> {
+pub async fn find_next_page(db_session: &ClientSession) -> Result<EventList> {
     let page_size = MAX_PAGE_SIZE + 1;
     let filter = doc! {};
 
-    let cursor = get_collection::<Event>(tx_context, "event")
+    let cursor = get_collection::<Event>(db_session, "event")
         .find(
             filter,
             FindOptions::builder().limit(Some(page_size as i64)).build(),
@@ -51,7 +51,7 @@ pub async fn find_next_page(tx_context: &mut TransactionalContext) -> Result<Eve
 
 #[instrument(name = "kafka_connector.delete_events", skip_all, level = "trace")]
 pub async fn delete_from_db(
-    tx_context: &mut TransactionalContext,
+    db_session: &ClientSession,
     events: &EventList,
 ) -> Result<(), AppError> {
     let event_ids: Vec<ObjectId> = events
@@ -65,7 +65,7 @@ pub async fn delete_from_db(
         "_id": { "$in" : event_ids }
     };
 
-    get_collection::<Event>(tx_context, "event")
+    get_collection::<Event>(db_session, "event")
         .delete_many(filter, DeleteOptions::default())
         .await?;
 

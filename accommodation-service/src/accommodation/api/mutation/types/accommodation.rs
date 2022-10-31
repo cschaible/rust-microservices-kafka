@@ -1,6 +1,7 @@
 use async_graphql::Context;
 use async_graphql::InputObject;
 use async_graphql::Object;
+use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
 use kafka_schema_accommodation::schema_create_accommodation::SCHEMA_NAME_CREATE_ACCOMMODATION;
@@ -9,6 +10,7 @@ use query::types::accommodation::AccommodationPayload;
 use tracing::instrument;
 use uuid::Uuid;
 
+use crate::accommodation::api::mutation::types::create_kafka_events;
 use crate::accommodation::api::query;
 use crate::accommodation::api::shared::types::CountryCode;
 use crate::accommodation::model::Accommodation;
@@ -16,9 +18,6 @@ use crate::accommodation::model::Address;
 use crate::accommodation::service::accommodation_service::create_accommodation;
 use crate::accommodation::service::accommodation_service::find_accommodation;
 use crate::accommodation::service::accommodation_service::update_accommodation;
-use crate::common::db::transactional2;
-use crate::event::service::dto::SerializableEventDto;
-use crate::event::service::event_service;
 use crate::DynContext;
 
 #[derive(Default)]
@@ -39,21 +38,22 @@ impl AccommodationInput {
         input: AddAccommodationInput,
     ) -> Result<AccommodationPayload, AppError> {
         let context = ctx.data_unchecked::<DynContext>();
-        let saved_accommodation = transactional2(context.clone(), |tx| {
+        let saved_accommodation = transactional(context.db_client(), |db_session| {
+            let event_dispatcher = context.event_dispatcher();
             let accommodation: Accommodation = input.clone().into();
+
             Box::pin(async move {
                 // Save entity to database
-                create_accommodation(tx, accommodation.clone()).await?;
+                create_accommodation(db_session, accommodation.clone()).await?;
 
                 // Create kafka events
-                let dto: Box<dyn SerializableEventDto> = Box::new(accommodation.clone());
-                let events = tx
-                    .dispatch_events(SCHEMA_NAME_CREATE_ACCOMMODATION.to_string(), dto)
-                    .await?;
-                for event in events {
-                    event_service::save(tx, &event).await?;
-                }
-
+                create_kafka_events(
+                    db_session,
+                    event_dispatcher,
+                    Box::new(accommodation.clone()),
+                    SCHEMA_NAME_CREATE_ACCOMMODATION,
+                )
+                .await?;
                 Ok(accommodation)
             })
         })
@@ -70,10 +70,12 @@ impl AccommodationInput {
     ) -> Result<AccommodationPayload, AppError> {
         let context = ctx.data_unchecked::<DynContext>();
 
-        let updated_accommodation = transactional2(context.clone(), |tx| {
+        let updated_accommodation = transactional(context.db_client(), |db_session| {
+            let event_dispatcher = context.event_dispatcher();
             let update = input.clone();
+
             Box::pin(async move {
-                let accommodation = find_accommodation(tx, input.id).await?;
+                let accommodation = find_accommodation(db_session, input.id).await?;
                 if let Some(mut accommodation) = accommodation {
                     // Check version
                     if input.version != accommodation.version {
@@ -91,17 +93,16 @@ impl AccommodationInput {
                         accommodation.address = address.into()
                     }
                     accommodation.version += 1;
-                    update_accommodation(tx, accommodation.clone()).await?;
+                    update_accommodation(db_session, accommodation.clone()).await?;
 
                     // Create kafka events
-                    let dto: Box<dyn SerializableEventDto> = Box::new(accommodation.clone());
-                    let events = tx
-                        .dispatch_events(SCHEMA_NAME_UPDATE_ACCOMMODATION.to_string(), dto)
-                        .await?;
-
-                    for event in events {
-                        event_service::save(tx, &event).await?;
-                    }
+                    create_kafka_events(
+                        db_session,
+                        event_dispatcher,
+                        Box::new(accommodation.clone()),
+                        SCHEMA_NAME_UPDATE_ACCOMMODATION,
+                    )
+                    .await?;
                     Ok(accommodation)
                 } else {
                     Err(AppError::DbError(DbError::NotFound))
