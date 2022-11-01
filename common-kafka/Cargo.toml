@@ -1,5 +1,5 @@
 [package]
-name = "kafka-common"
+name = "common-kafka"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"

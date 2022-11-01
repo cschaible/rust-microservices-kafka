@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use common_error::AppError;
-use kafka_common::partition_of;
+use common_kafka::partition_of;
 use kafka_schema_accommodation::schema_create_room_type::CreateRoomTypeAvro;
 use kafka_schema_accommodation::schema_create_room_type::SCHEMA_NAME_CREATE_ROOM_TYPE;
 use kafka_schema_accommodation::schema_delete_room_type::DeleteRoomTypeAvro;

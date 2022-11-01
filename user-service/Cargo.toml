@@ -17,11 +17,11 @@ axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
 chrono = "0.4.19"
 common-db = { path = "../common-db" }
 common-error = { path = "../common-error", features = ["grapqhl", "kafka", "relationaldb"] }
+common-kafka = { path = "../common-kafka" }
 common-tracing = { path = "../common-tracing" }
 config = "0.13.2"
 futures = "0.3.21"
 itertools = "0.10.3"
-kafka-common = { path = "../kafka-common" }
 kafka-schema-common = { path = "../kafka-schema-common" }
 kafka-schema-user = { path = "../kafka-schema-user" }
 opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
