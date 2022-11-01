@@ -10,13 +10,13 @@
       <sourceFolder url="file://$MODULE_DIR$/user-service-seaorm/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/kafka-schema-common/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/user-service/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/kafka-connector/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/kafka-topic-client/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/opentelemetry-propagator-b3/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/kafka-connector-mongodb/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/kafka-schema-accommodation/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common-db-mongodb/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app-accommodation-service/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app-kafka-connector-relationaldb/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common-kafka/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common-tracing/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
