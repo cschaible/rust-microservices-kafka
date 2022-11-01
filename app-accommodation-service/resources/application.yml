@@ -19,9 +19,9 @@ logging:
   level:
     root: warn
     directives:
-      - namespace: accommodation_service
+      - namespace: app_accommodation_service
         level: info
-      - namespace: accommodation_service::user::listener
+      - namespace: app_accommodation_service::user::listener
         level: trace
       - namespace: common_error
         level: trace

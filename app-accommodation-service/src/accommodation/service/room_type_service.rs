@@ -19,7 +19,7 @@ use uuid::Uuid;
 
 use crate::accommodation::model::RoomType;
 
-#[instrument(name = "accommodation_service.add_room_type", skip_all)]
+#[instrument(name = "add_room_type", skip_all)]
 pub async fn add_room_type(
     db_session: &ClientSession,
     room_type: RoomType,
@@ -31,7 +31,7 @@ pub async fn add_room_type(
     Ok(())
 }
 
-#[instrument(name = "accommodation_service.update_room_type", skip_all)]
+#[instrument(name = "update_room_type", skip_all)]
 pub async fn update_room_type(
     db_session: &ClientSession,
     room_type: RoomType,
@@ -48,7 +48,7 @@ pub async fn update_room_type(
     Ok(())
 }
 
-#[instrument(name = "accommodation_service.find_room_type", skip_all)]
+#[instrument(name = "find_room_type", skip_all)]
 pub async fn find_room_type(
     db_session: &ClientSession,
     id: Uuid,
@@ -62,7 +62,7 @@ pub async fn find_room_type(
     Ok(room_type)
 }
 
-#[instrument(name = "accommodation_service.find_room_types", skip_all)]
+#[instrument(name = "find_room_types", skip_all)]
 pub async fn find_room_types(
     db_session: &ClientSession,
     accommodation_ids: Vec<Uuid>,
@@ -88,7 +88,7 @@ pub async fn find_room_types(
     Ok(room_types_by_accommodation_id)
 }
 
-#[instrument(name = "accommodation_service.delete_room_type", skip_all)]
+#[instrument(name = "delete_room_type", skip_all)]
 pub async fn delete_room_type(db_session: &ClientSession, id: Uuid) -> Result<u64, AppError> {
     let filter = id_filter(id);
 

@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "accommodation-service",
+    "app-accommodation-service",
     "common-db",
     "common-db-mongodb",
     "common-error",

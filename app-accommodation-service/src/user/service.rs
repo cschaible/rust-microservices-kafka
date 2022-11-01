@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::user::model::Model;
 
-#[instrument(name = "accommodation_service.create_user", skip_all)]
+#[instrument(name = "create_user", skip_all)]
 pub async fn create_user(
     db_session: &ClientSession,
     identifier: Uuid,
