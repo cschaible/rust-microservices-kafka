@@ -2,13 +2,13 @@
 
 members = [
     "app-accommodation-service",
+    "app-kafka-connector-mongodb",
     "app-kafka-connector-relationaldb",
     "common-db",
     "common-db-mongodb",
     "common-error",
     "common-kafka",
     "common-tracing",
-    "kafka-connector-mongodb",
     "kafka-schema-accommodation",
     "kafka-schema-common",
     "kafka-schema-publisher",

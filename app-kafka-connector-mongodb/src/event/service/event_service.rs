@@ -49,7 +49,7 @@ pub async fn find_next_page(db_session: &ClientSession) -> Result<EventList> {
     Ok(event_list)
 }
 
-#[instrument(name = "kafka_connector.delete_events", skip_all, level = "trace")]
+#[instrument(name = "delete_events", skip_all, level = "trace")]
 pub async fn delete_from_db(
     db_session: &ClientSession,
     events: &EventList,
@@ -72,7 +72,7 @@ pub async fn delete_from_db(
     Ok(())
 }
 
-#[instrument(name = "kafka_connector.send_events", skip_all, level = "trace")]
+#[instrument(name = "send_events", skip_all, level = "trace")]
 pub async fn send_to_kafka(
     producer: Arc<FutureProducer>,
     tracing_propagator: Arc<Propagator>,
@@ -94,7 +94,7 @@ pub async fn send_to_kafka(
             let trace_id = event.trace_id.clone();
 
             // Initialize span
-            let span = span!(Level::TRACE, "kafka_connector.send");
+            let span = span!(Level::TRACE, "send");
             let _ = span.enter();
 
             if let Some(id) = trace_id.clone() {
