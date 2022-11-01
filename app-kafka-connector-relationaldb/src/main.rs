@@ -4,7 +4,7 @@ use std::sync::Arc;
 use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
-use common_db::pool;
+use common_db_relationaldb::pool;
 use common_error::AppError;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;

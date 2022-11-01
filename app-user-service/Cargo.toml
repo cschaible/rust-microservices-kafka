@@ -15,7 +15,7 @@ async-graphql-axum = "4.0.12"
 axum = "0.5.0"
 axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
 chrono = "0.4.19"
-common-db = { path = "../common-db" }
+common-db-relationaldb = { path = "../common-db-relationaldb" }
 common-error = { path = "../common-error", features = ["grapqhl", "kafka", "relationaldb"] }
 common-kafka = { path = "../common-kafka" }
 common-tracing = { path = "../common-tracing" }

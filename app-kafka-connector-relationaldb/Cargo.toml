@@ -10,7 +10,7 @@ license = "MIT"
 anyhow = "1.0"
 axum = "0.5.0"
 axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
-common-db = { path = "../common-db" }
+common-db-relationaldb = { path = "../common-db-relationaldb" }
 common-error = { path = "../common-error", features = ["kafka", "relationaldb", "scheduler"] }
 common-tracing = { path = "../common-tracing" }
 config = "0.13.2"

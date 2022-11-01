@@ -1,6 +1,6 @@
 use std::env;
 
-use common_db::config::DatabaseConfiguration;
+use common_db_relationaldb::config::DatabaseConfiguration;
 use config::Config;
 use config::ConfigError;
 use config::File;

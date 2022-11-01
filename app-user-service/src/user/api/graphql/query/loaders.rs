@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use async_graphql::dataloader::*;
-use common_db::transaction::transactional;
+use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
 use uuid::Uuid;
 
