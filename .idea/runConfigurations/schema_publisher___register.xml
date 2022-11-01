@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="schema-publisher - register" type="CargoCommandRunConfiguration" factoryName="Cargo Command" folderName="kafka">
-    <option name="command" value="run --package kafka-schema-publisher --bin kafka-schema-publisher -- register local" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-schema-publisher" />
+    <option name="command" value="run --package app-kafka-schema-publisher --bin app-kafka-schema-publisher -- register local" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/app-kafka-schema-publisher" />
     <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />
