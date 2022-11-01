@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="topic-client - create" type="CargoCommandRunConfiguration" factoryName="Cargo Command" folderName="kafka">
-    <option name="command" value="run --package kafka-topic-client --bin kafka-topic-client -- create-topics local" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-topic-client" />
+    <option name="command" value="run --package app-kafka-topic-client --bin app-kafka-topic-client -- create-topics local" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/app-kafka-topic-client" />
     <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />
