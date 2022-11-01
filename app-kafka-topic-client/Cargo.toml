@@ -1,5 +1,5 @@
 [package]
-name = "kafka-topic-client"
+name = "app-kafka-topic-client"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
