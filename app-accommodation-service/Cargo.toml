@@ -1,5 +1,5 @@
 [package]
-name = "accommodation-service"
+name = "app-accommodation-service"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"

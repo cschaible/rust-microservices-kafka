@@ -17,7 +17,7 @@ use crate::accommodation::api::shared::types::CountryCode;
 use crate::accommodation::model::Accommodation;
 use crate::common::model::IsoCountryCodeEnum;
 
-#[instrument(name = "accommodation_service.create_accommodation", skip_all)]
+#[instrument(name = "create_accommodation", skip_all)]
 pub async fn create_accommodation(
     db_session: &ClientSession,
     accommodation: Accommodation,
@@ -29,7 +29,7 @@ pub async fn create_accommodation(
     Ok(())
 }
 
-#[instrument(name = "accommodation_service.update_accommodation", skip_all)]
+#[instrument(name = "update_accommodation", skip_all)]
 pub async fn update_accommodation(
     db_session: &ClientSession,
     accommodation: Accommodation,
@@ -46,7 +46,7 @@ pub async fn update_accommodation(
     Ok(())
 }
 
-#[instrument(name = "accommodation_service.find_accommodation", skip_all)]
+#[instrument(name = "find_accommodation", skip_all)]
 pub async fn find_accommodation(
     db_session: &ClientSession,
     id: Uuid,
@@ -60,7 +60,7 @@ pub async fn find_accommodation(
     Ok(accommodation)
 }
 
-#[instrument(name = "accommodation_service.find_accommodations", skip_all)]
+#[instrument(name = "find_accommodations", skip_all)]
 pub async fn find_accommodations(
     db_session: &ClientSession,
     name: Option<String>,
