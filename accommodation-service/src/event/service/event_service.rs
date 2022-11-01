@@ -1,9 +1,9 @@
 use common_db_mongodb::util::get_collection;
 use common_error::AppError;
+use common_tracing::get_b3_trace_id;
 use mongodb::options::InsertOneOptions;
 use mongodb::ClientSession;
 use tracing::instrument;
-use tracing_common::get_b3_trace_id;
 
 use super::dto::EventDto;
 use crate::event::model::event::Model;

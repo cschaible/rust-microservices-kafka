@@ -19,6 +19,7 @@ bson = { version = "2.4.0", features = ["uuid-1", "serde_with"] }
 chrono = "0.4.19"
 common-db-mongodb = { path = "../common-db-mongodb" }
 common-error = { path = "../common-error", features = ["grapqhl", "mongodb", "kafka"] }
+common-tracing = { path = "../common-tracing" }
 config = "0.13.2"
 futures = "0.3.21"
 futures-util = "0.3.24"
@@ -40,7 +41,6 @@ tokio = { version = "1.17.0", features = ["full"] }
 tower = { version = "0.4.12", features = ["limit"] }
 tower-http = { version = "0.3.3", features = ["compression-full", "trace"] }
 tracing = "0.1"
-tracing-common = { path = "../tracing-common" }
 tracing-opentelemetry = "0.18.0"
 tracing-serde = "0.1.3"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }

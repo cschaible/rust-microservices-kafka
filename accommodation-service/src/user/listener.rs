@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use apache_avro::schema::Name;
 use common_db_mongodb::transaction::transactional;
+use common_tracing::get_context_from_b3;
 use kafka_schema_common::schema_key::KeyAvro;
 use kafka_schema_user::schema_create_user::CreateUserAvro;
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
@@ -22,8 +23,7 @@ use tracing::warn;
 use tracing::Instrument;
 use tracing::Level;
 use tracing::Span;
-use tracing_common::get_context_from_b3;
-// use tracing_common::B3SpanExt;
+// use common_tracing::B3SpanExt;
 use uuid::Uuid;
 
 use crate::config::configuration::ConsumerConfiguration;
