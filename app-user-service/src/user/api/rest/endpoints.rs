@@ -2,7 +2,7 @@ use axum::extract::Extension;
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::Json;
-use common_db::transaction::transactional;
+use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
 use futures::FutureExt;

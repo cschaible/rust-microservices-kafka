@@ -6,7 +6,7 @@ use axum::routing::get;
 use axum::Router;
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
-use common_db::pool;
+use common_db_relationaldb::pool;
 use common_error::AppError;
 use migration::Migrator;
 use tower::limit::ConcurrencyLimitLayer;

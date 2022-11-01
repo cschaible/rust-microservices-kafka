@@ -1,7 +1,7 @@
 use async_graphql::Context;
 use async_graphql::InputObject;
 use async_graphql::Object;
-use common_db::transaction::transactional;
+use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
 use sea_orm::ActiveValue::Set;

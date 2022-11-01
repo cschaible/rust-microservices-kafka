@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use common_db::transaction::transactional;
+use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
