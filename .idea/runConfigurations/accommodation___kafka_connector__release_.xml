@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="accommodation - kafka-connector (release)" type="CargoCommandRunConfiguration" factoryName="Cargo Command" folderName="application-release">
-    <option name="command" value="run --package kafka-connector-mongodb --bin kafka-connector-mongodb --release" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/kafka-connector-mongodb" />
+    <option name="command" value="run --package app-kafka-connector-mongodb --bin app-kafka-connector-mongodb --release" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/app-kafka-connector-mongodb" />
     <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />

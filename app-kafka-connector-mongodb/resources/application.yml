@@ -11,9 +11,9 @@ logging:
   level:
     root: warn
     directives:
-      - namespace: kafka_connector_mongodb
+      - namespace: app_kafka_connector_mongodb
         level: debug
-      - namespace: kafka_connector_mongodb::event
+      - namespace: app_kafka_connector_mongodb::event
         level: trace
       - namespace: common_error
         level: trace
