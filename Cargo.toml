@@ -6,6 +6,7 @@ members = [
     "app-kafka-connector-relationaldb",
     "app-kafka-schema-publisher",
     "app-kafka-topic-client",
+    "app-user-service",
     "common-db",
     "common-db-mongodb",
     "common-error",
@@ -14,6 +15,5 @@ members = [
     "kafka-schema-accommodation",
     "kafka-schema-common",
     "kafka-schema-user",
-    "opentelemetry-propagator-b3",
-    "user-service"
+    "opentelemetry-propagator-b3"
 ]
