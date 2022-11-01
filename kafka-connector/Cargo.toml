@@ -12,6 +12,7 @@ axum = "0.5.0"
 axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
 common-db = { path = "../common-db" }
 common-error = { path = "../common-error", features = ["kafka", "relationaldb", "scheduler"] }
+common-tracing = { path = "../common-tracing" }
 config = "0.13.2"
 futures = "0.3.21"
 opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
@@ -29,6 +30,5 @@ tokio-cron-scheduler = { version = "0.8.1", features = ["signal"] }
 tower = "0.4.12"
 tower-http = { version = "0.3.3", features = ["compression-full", "trace"] }
 tracing = "0.1"
-tracing-common = { path = "../tracing-common" }
 tracing-opentelemetry = "0.18.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }

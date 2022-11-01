@@ -5,15 +5,15 @@ members = [
     "common-db",
     "common-db-mongodb",
     "common-error",
-    "kafka-schema-accommodation",
+    "common-tracing",
     "kafka-common",
     "kafka-connector",
     "kafka-connector-mongodb",
+    "kafka-schema-accommodation",
     "kafka-schema-common",
     "kafka-schema-publisher",
     "kafka-schema-user",
     "kafka-topic-client",
     "opentelemetry-propagator-b3",
-    "tracing-common",
     "user-service"
 ]

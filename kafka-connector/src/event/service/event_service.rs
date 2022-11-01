@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use common_error::AppError;
+use common_tracing::B3SpanExt;
 use futures::future;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use opentelemetry_propagator_b3::propagator::B3_SINGLE_HEADER;
@@ -23,7 +24,6 @@ use tracing::instrument;
 use tracing::span;
 use tracing::Instrument;
 use tracing::Level;
-use tracing_common::B3SpanExt;
 
 use super::super::model::event;
 use super::super::model::event::Entity as EventEntity;

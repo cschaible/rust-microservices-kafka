@@ -1,5 +1,5 @@
 use common_error::AppError;
-use tracing_common::initialize_logging_and_tracing;
+use common_tracing::initialize_logging_and_tracing;
 
 use crate::config::configuration::Configuration;
 

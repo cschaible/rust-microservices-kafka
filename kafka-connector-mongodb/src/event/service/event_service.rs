@@ -4,6 +4,7 @@ use std::time::Duration;
 use anyhow::Result;
 use common_db_mongodb::util::get_collection;
 use common_error::AppError;
+use common_tracing::B3SpanExt;
 use futures::future;
 use futures::TryStreamExt;
 use mongodb::bson::doc;
@@ -23,7 +24,6 @@ use tracing::instrument;
 use tracing::span;
 use tracing::Instrument;
 use tracing::Level;
-use tracing_common::B3SpanExt;
 
 use super::super::model::event::Event;
 use crate::common::db::MAX_PAGE_SIZE;

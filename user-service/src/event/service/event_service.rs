@@ -1,9 +1,9 @@
 use common_error::AppError;
+use common_tracing::get_b3_trace_id;
 use sea_orm::ActiveModelTrait;
 use sea_orm::DatabaseTransaction;
 use sea_orm::Set;
 use tracing::instrument;
-use tracing_common::get_b3_trace_id;
 
 use super::dto::EventDto;
 use crate::event::model::event;
