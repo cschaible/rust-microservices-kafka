@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="user-service (release)" type="CargoCommandRunConfiguration" factoryName="Cargo Command" folderName="application-release">
-    <option name="command" value="run --package user-service --bin user-service --release" />
-    <option name="workingDirectory" value="file://$PROJECT_DIR$/user-service" />
+    <option name="command" value="run --package app-user-service --bin app-user-service --release" />
+    <option name="workingDirectory" value="file://$PROJECT_DIR$/app-user-service" />
     <option name="channel" value="STABLE" />
     <option name="requiredFeatures" value="true" />
     <option name="allFeatures" value="false" />
