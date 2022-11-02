@@ -19,6 +19,7 @@
       <sourceFolder url="file://$MODULE_DIR$/common-db-relationaldb/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common-kafka/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common-tracing/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common-metrics/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
