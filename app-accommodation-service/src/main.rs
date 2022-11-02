@@ -11,6 +11,7 @@ use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
 use common_db_mongodb::pool;
 use common_error::AppError;
+use common_metrics::middleware::RouterMetricsExt;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::consumer::StreamConsumer;
@@ -118,11 +119,15 @@ async fn start_web_server(
 fn init_routing(context: DynContext) -> Router {
     let base_router = Router::new().route("/health", get(health));
 
+    let metrics_router = common_metrics::api::init_routing();
+
     let graphql_router = graphql::routing(context.clone())
+        .add_metrics_middleware()
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
     base_router
+        .merge(metrics_router)
         .merge(graphql_router)
         .layer(Extension(context))
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)))

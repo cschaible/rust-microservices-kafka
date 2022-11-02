@@ -8,6 +8,7 @@ use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use common::context::DynContext;
 use common_db_relationaldb::pool;
 use common_error::AppError;
+use common_metrics::middleware::RouterMetricsExt;
 use migration::Migrator;
 use tower::limit::ConcurrencyLimitLayer;
 use tower_http::compression::predicate::SizeAbove;
@@ -82,15 +83,20 @@ async fn start_web_server(config: &ServerConfiguration, context: DynContext) {
 fn init_routing(context: DynContext) -> Router {
     let base_router = Router::new().route("/health", get(health));
 
+    let metrics_router = common_metrics::api::init_routing();
+
     let user_rest_router = user::api::rest::routing::init()
+        .add_metrics_middleware()
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
     let graphql_router = graphql::routing(context.clone())
+        .add_metrics_middleware()
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
     base_router
+        .merge(metrics_router)
         .merge(user_rest_router)
         .merge(graphql_router)
         .layer(Extension(context))

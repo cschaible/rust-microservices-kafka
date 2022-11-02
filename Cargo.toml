@@ -11,6 +11,7 @@ members = [
     "common-db-relationaldb",
     "common-error",
     "common-kafka",
+    "common-metrics",
     "common-tracing",
     "kafka-schema-accommodation",
     "kafka-schema-common",
