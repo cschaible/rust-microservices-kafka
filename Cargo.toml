@@ -12,6 +12,7 @@ members = [
     "common-error",
     "common-kafka",
     "common-metrics",
+    "common-security",
     "common-tracing",
     "kafka-schema-accommodation",
     "kafka-schema-common",

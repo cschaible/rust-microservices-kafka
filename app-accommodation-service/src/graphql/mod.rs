@@ -11,6 +11,7 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Extension;
 use axum::Router;
+use common_security::authentication::DynAuthenticationHolder;
 
 use crate::accommodation::api::mutation::Mutation;
 use crate::accommodation::api::query::loaders::RoomTypeLoader;
@@ -21,10 +22,11 @@ use crate::DynContext;
 pub type ApplicationSchema = Schema<Query, Mutation, EmptySubscription>;
 
 async fn graphql_handler(
+    Extension(authentication): Extension<DynAuthenticationHolder>,
     schema: Extension<ApplicationSchema>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
-    schema.execute(req.into_inner()).await.into()
+    schema.execute(req.0.data(authentication)).await.into()
 }
 
 pub fn routing(context: DynContext) -> Router {

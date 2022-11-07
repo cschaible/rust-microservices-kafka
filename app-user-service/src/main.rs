@@ -9,6 +9,7 @@ use common::context::DynContext;
 use common_db_relationaldb::pool;
 use common_error::AppError;
 use common_metrics::middleware::RouterMetricsExt;
+use common_security::middleware::RouterSecurityExt;
 use migration::Migrator;
 use tower::limit::ConcurrencyLimitLayer;
 use tower_http::compression::predicate::SizeAbove;
@@ -19,6 +20,7 @@ use crate::common::api::SERVER_PORT;
 use crate::common::context::ContextImpl;
 use crate::common::db;
 use crate::common::kafka;
+use crate::common::security::OAuthConfiguration;
 use crate::common::server::shutdown_signal;
 use crate::config::configuration::Configuration;
 use crate::config::configuration::ServerConfiguration;
@@ -56,15 +58,21 @@ async fn main() -> Result<(), AppError> {
     // Construct request context
     let context = ContextImpl::new_dyn_context(connection_pool, Arc::new(event_dispatcher));
 
+    let oauth_configuration = OAuthConfiguration::new(context.clone(), &config.security).await?;
+
     // Start the web-server
-    start_web_server(&config.server, context).await;
+    start_web_server(&config.server, context, oauth_configuration).await;
 
     Ok(())
 }
 
-async fn start_web_server(config: &ServerConfiguration, context: DynContext) {
+async fn start_web_server(
+    config: &ServerConfiguration,
+    context: DynContext,
+    oauth_configuration: OAuthConfiguration,
+) {
     // Initialize routing
-    let routing = init_routing(context);
+    let routing = init_routing(context, oauth_configuration);
 
     // Start server
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -80,18 +88,20 @@ async fn start_web_server(config: &ServerConfiguration, context: DynContext) {
     opentelemetry::global::shutdown_tracer_provider();
 }
 
-fn init_routing(context: DynContext) -> Router {
+fn init_routing(context: DynContext, oauth_configuration: OAuthConfiguration) -> Router {
     let base_router = Router::new().route("/health", get(health));
 
     let metrics_router = common_metrics::api::init_routing();
 
     let user_rest_router = user::api::rest::routing::init()
         .add_metrics_middleware()
+        .add_auth_middleware()
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
     let graphql_router = graphql::routing(context.clone())
         .add_metrics_middleware()
+        .add_auth_middleware()
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
@@ -100,5 +110,9 @@ fn init_routing(context: DynContext) -> Router {
         .merge(user_rest_router)
         .merge(graphql_router)
         .layer(Extension(context))
+        .layer(Extension(oauth_configuration.user_details_service))
+        .layer(Extension(oauth_configuration.user_identifier_extractor))
+        .layer(Extension(oauth_configuration.token_decoders))
+        .layer(Extension(oauth_configuration.token_validator))
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)))
 }

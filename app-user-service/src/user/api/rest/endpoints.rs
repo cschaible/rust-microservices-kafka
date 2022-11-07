@@ -5,6 +5,7 @@ use axum::Json;
 use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
+use common_security::authentication::DynAuthenticationHolder;
 use futures::FutureExt;
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
 use sea_orm::ActiveValue;
@@ -32,7 +33,9 @@ use crate::user::service::user_service;
 pub async fn create_user<'a>(
     Json(create_user_resource): Json<CreateUserResource>,
     Extension(context): Extension<DynContext>,
+    Extension(authentication): Extension<DynAuthenticationHolder>,
 ) -> Result<Json<UserResource>, AppError> {
+    let user_identifier = authentication.new_user_authenticated()?.user_identifier;
     transactional(context.db_connection(), |db_connection| {
         let mut user: user::ActiveModel = create_user_resource.clone().into();
         let phone_numbers: Option<Vec<phone_number::ActiveModel>> =
@@ -40,7 +43,7 @@ pub async fn create_user<'a>(
         let event_dispatcher = context.event_dispatcher();
 
         Box::pin(async move {
-            user.identifier = ActiveValue::set(Uuid::new_v4());
+            user.identifier = ActiveValue::set(user_identifier);
             let user = user_service::create_user(db_connection, &user).await?;
 
             let phone_numbers = if let Some(numbers) = phone_numbers {
@@ -81,11 +84,16 @@ pub async fn create_user<'a>(
     .await
 }
 
-#[instrument(name = "user.api.find_one_by_identifier", skip(context))]
+#[instrument(
+    name = "user.api.find_one_by_identifier",
+    skip(context, authentication)
+)]
 pub async fn find_one_by_identifier(
     Path(identifier): Path<Uuid>,
     Extension(context): Extension<DynContext>,
+    Extension(authentication): Extension<DynAuthenticationHolder>,
 ) -> Result<Json<UserResource>, AppError> {
+    authentication.user_authenticated()?;
     transactional(context.db_connection(), |db_connection| {
         Box::pin(async move {
             match user_service::find_one_by_identifier(db_connection, identifier).await {
@@ -100,11 +108,13 @@ pub async fn find_one_by_identifier(
     .await
 }
 
-#[instrument(name = "user.api.find_all", skip(context))]
+#[instrument(name = "user.api.find_all", skip(context, authentication))]
 pub async fn find_all(
     Query(page_params): Query<PageParams>,
     Extension(context): Extension<DynContext>,
+    Extension(authentication): Extension<DynAuthenticationHolder>,
 ) -> Result<Json<Page<UserResource>>, AppError> {
+    authentication.user_authenticated()?;
     transactional(context.db_connection(), |db_connection| {
         let params = page_params.clone();
 
@@ -136,7 +146,9 @@ pub async fn find_all(
 pub async fn find_all_by_identifiers(
     Json(user_identifiers): Json<Vec<Uuid>>,
     Extension(context): Extension<DynContext>,
+    Extension(authentication): Extension<DynAuthenticationHolder>,
 ) -> Result<Json<Vec<UserResource>>, AppError> {
+    authentication.user_authenticated()?;
     transactional(context.db_connection(), |db_connection| {
         let identifiers = user_identifiers.clone();
 

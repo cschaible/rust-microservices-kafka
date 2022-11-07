@@ -145,6 +145,7 @@ services:
       - start-dev
       - --import-realm
     # Admin-Console: http://localhost:8080
+    # OAuth Parameters: http://localhost:8080/realms/app/.well-known/openid-configuration
     # Realm parameters: http://localhost:8080/realms/app
     # Client Account Console: http://localhost:8080/realms/app/account
     # Users / Passwords:

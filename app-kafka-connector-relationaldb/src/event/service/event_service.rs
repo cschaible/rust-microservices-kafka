@@ -109,7 +109,7 @@ pub async fn send_to_kafka(
             // Instrumented<OwnedDeliveryResult>
             let delivery_result = {
                 producer.send(
-                    FutureRecord::to(&*event.topic)
+                    FutureRecord::to(&event.topic)
                         .payload(&event.payload)
                         .partition(event.partition)
                         .key(&event.key)

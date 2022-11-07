@@ -4,6 +4,7 @@ use async_graphql::Object;
 use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
+use common_security::authentication::DynAuthenticationHolder;
 use kafka_schema_accommodation::schema_create_accommodation::SCHEMA_NAME_CREATE_ACCOMMODATION;
 use kafka_schema_accommodation::schema_update_accommodation::SCHEMA_NAME_UPDATE_ACCOMMODATION;
 use query::types::accommodation::AccommodationPayload;
@@ -37,7 +38,14 @@ impl AccommodationInput {
         ctx: &Context<'_>,
         input: AddAccommodationInput,
     ) -> Result<AccommodationPayload, AppError> {
+        // Check authentication
+        ctx.data_unchecked::<DynAuthenticationHolder>()
+            .user_authenticated()?;
+
+        // Get context
         let context = ctx.data_unchecked::<DynContext>();
+
+        // Start transaction and execute query
         let saved_accommodation = transactional(context.db_client(), |db_session| {
             let event_dispatcher = context.event_dispatcher();
             let accommodation: Accommodation = input.clone().into();
@@ -68,8 +76,14 @@ impl AccommodationInput {
         ctx: &Context<'_>,
         input: UpdateAccommodationInput,
     ) -> Result<AccommodationPayload, AppError> {
+        // Check authentication
+        ctx.data_unchecked::<DynAuthenticationHolder>()
+            .user_authenticated()?;
+
+        // Get context
         let context = ctx.data_unchecked::<DynContext>();
 
+        // Start transaction and execute query
         let updated_accommodation = transactional(context.db_client(), |db_session| {
             let event_dispatcher = context.event_dispatcher();
             let update = input.clone();

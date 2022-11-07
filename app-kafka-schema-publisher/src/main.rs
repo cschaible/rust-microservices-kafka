@@ -130,7 +130,7 @@ struct SchemaToRegister<'a> {
 }
 
 impl<'a> SchemaToRegister<'a> {
-    fn new(name: &'a str, schema: &'a str) -> SchemaToRegister {
+    fn new(name: &'a str, schema: &'a str) -> SchemaToRegister<'a> {
         Self {
             subject_name: name,
             schema_definition: schema,

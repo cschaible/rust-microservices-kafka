@@ -11,3 +11,8 @@ kafka:
       - id: user
         topic_name: user
         partitions: 2
+
+security:
+  jwks:
+    issuer: http://localhost:8080/realms/app
+    url: http://localhost:8080/realms/app/protocol/openid-connect/certs

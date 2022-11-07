@@ -12,9 +12,13 @@ use tracing::error;
 
 #[derive(Clone, Debug)]
 pub enum AppError {
+    #[cfg(feature = "security")]
+    AuthenticationError(common_security::authentication::AuthenticationError),
     ConfigError(Arc<config::ConfigError>),
     DbError(DbError),
     IoError(Arc<std::io::Error>),
+    #[cfg(feature = "security")]
+    JwkLoaderError(common_security::jwk::error::JwkLoaderError),
     #[cfg(feature = "kafka")]
     KafkaError(rdkafka::error::KafkaError),
     #[cfg(feature = "mongodb")]
@@ -27,6 +31,8 @@ pub enum AppError {
     SchedulerError(tokio_cron_scheduler::JobSchedulerError),
     #[cfg(feature = "kafka")]
     SerializationError(schema_registry_converter::error::SRCError),
+    #[cfg(feature = "security")]
+    TokenDecoderError(common_security::jwt::error::TokenDecoderError),
     Unhandled(Arc<anyhow::Error>),
 }
 
@@ -58,6 +64,15 @@ impl IntoResponse for AppError {
 
 pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
     match error {
+        #[cfg(feature = "security")]
+        AppError::AuthenticationError(e) => match e {
+            common_security::authentication::AuthenticationError::AccessDenied => {
+                ("Access denied", format!("{:?}", e), StatusCode::FORBIDDEN)
+            }
+            common_security::authentication::AuthenticationError::Unauthorized => {
+                ("Unauthorized", format!("{:?}", e), StatusCode::UNAUTHORIZED)
+            }
+        },
         AppError::ConfigError(e) => (
             "Internal Server Error",
             format!("{:?}", e),
@@ -76,6 +91,12 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
             ),
         },
         AppError::IoError(e) => (
+            "Internal Server Error",
+            format!("{:?}", e),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ),
+        #[cfg(feature = "security")]
+        AppError::JwkLoaderError(e) => (
             "Internal Server Error",
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -111,6 +132,12 @@ pub fn match_error(error: &AppError) -> (&str, String, StatusCode) {
             "Internal Server Error",
             format!("{:?}", e),
             StatusCode::INTERNAL_SERVER_ERROR,
+        ),
+        #[cfg(feature = "security")]
+        AppError::TokenDecoderError(e) => (
+            "Invalid token",
+            format!("{:?}", e),
+            StatusCode::UNAUTHORIZED,
         ),
         AppError::Unhandled(e) => (
             "Internal Server Error",
@@ -199,6 +226,27 @@ impl From<rdkafka::error::KafkaError> for AppError {
 impl From<schema_registry_converter::error::SRCError> for AppError {
     fn from(e: schema_registry_converter::error::SRCError) -> Self {
         AppError::SerializationError(e)
+    }
+}
+
+#[cfg(feature = "security")]
+impl From<common_security::authentication::AuthenticationError> for AppError {
+    fn from(e: common_security::authentication::AuthenticationError) -> Self {
+        AppError::AuthenticationError(e)
+    }
+}
+
+#[cfg(feature = "security")]
+impl From<common_security::jwk::error::JwkLoaderError> for AppError {
+    fn from(e: common_security::jwk::error::JwkLoaderError) -> Self {
+        AppError::JwkLoaderError(e)
+    }
+}
+
+#[cfg(feature = "security")]
+impl From<common_security::jwt::error::TokenDecoderError> for AppError {
+    fn from(e: common_security::jwt::error::TokenDecoderError) -> Self {
+        AppError::TokenDecoderError(e)
     }
 }
 

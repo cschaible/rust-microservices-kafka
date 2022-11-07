@@ -2,6 +2,7 @@ use std::env;
 use std::sync::atomic::Ordering::SeqCst;
 
 use common_db_mongodb::config::DatabaseConfiguration;
+use common_security::config::SecurityConfiguration;
 use config::Config;
 use config::ConfigError;
 use config::File;
@@ -16,6 +17,7 @@ pub struct Configuration {
     pub database: DatabaseConfiguration,
     pub kafka: KafkaConfiguration,
     pub logging: LoggingConfiguration,
+    pub security: SecurityConfiguration,
     pub server: ServerConfiguration,
 }
 
