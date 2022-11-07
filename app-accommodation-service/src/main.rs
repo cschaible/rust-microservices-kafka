@@ -12,6 +12,7 @@ use common::context::DynContext;
 use common_db_mongodb::pool;
 use common_error::AppError;
 use common_metrics::middleware::RouterMetricsExt;
+use common_security::middleware::RouterSecurityExt;
 use opentelemetry_propagator_b3::propagator::B3Encoding;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::consumer::StreamConsumer;
@@ -27,6 +28,7 @@ use crate::common::context::ContextImpl;
 use crate::common::db;
 use crate::common::kafka;
 use crate::common::kafka::AvroRecordDecoder;
+use crate::common::security::OAuthConfiguration;
 use crate::common::server::shutdown_signal;
 use crate::config::configuration::Configuration;
 use crate::config::configuration::KafkaConfiguration;
@@ -88,8 +90,13 @@ async fn main() -> Result<(), AppError> {
         propagator.clone(),
     );
 
+    let oauth_configuration = OAuthConfiguration::new(context.clone(), &config.security).await?;
+
     // Start the web-server
-    start_web_server(&config.server, context, vec![user_handle]).await;
+    start_web_server(&config.server, context, oauth_configuration, vec![
+        user_handle,
+    ])
+    .await;
 
     Ok(())
 }
@@ -97,10 +104,11 @@ async fn main() -> Result<(), AppError> {
 async fn start_web_server(
     config: &ServerConfiguration,
     context: DynContext,
+    oauth_configuration: OAuthConfiguration,
     shutdown_handles: Vec<JoinHandle<()>>,
 ) {
     // Initialize routing
-    let routing = init_routing(context);
+    let routing = init_routing(context, oauth_configuration);
 
     // Start server
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -116,13 +124,14 @@ async fn start_web_server(
     opentelemetry::global::shutdown_tracer_provider();
 }
 
-fn init_routing(context: DynContext) -> Router {
+fn init_routing(context: DynContext, oauth_configuration: OAuthConfiguration) -> Router {
     let base_router = Router::new().route("/health", get(health));
 
     let metrics_router = common_metrics::api::init_routing();
 
     let graphql_router = graphql::routing(context.clone())
         .add_metrics_middleware()
+        .add_auth_middleware()
         .layer(opentelemetry_tracing_layer())
         .layer(ConcurrencyLimitLayer::new(10));
 
@@ -130,6 +139,10 @@ fn init_routing(context: DynContext) -> Router {
         .merge(metrics_router)
         .merge(graphql_router)
         .layer(Extension(context))
+        .layer(Extension(oauth_configuration.user_details_service))
+        .layer(Extension(oauth_configuration.user_identifier_extractor))
+        .layer(Extension(oauth_configuration.token_decoders))
+        .layer(Extension(oauth_configuration.token_validator))
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(0)))
 }
 

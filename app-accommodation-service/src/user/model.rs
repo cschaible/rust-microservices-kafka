@@ -1,3 +1,4 @@
+use common_security::authentication::UserDetails;
 use serde::Deserialize;
 use serde::Serialize;
 use uuid::Uuid;
@@ -9,3 +10,5 @@ pub struct Model {
     pub version: i64,
     pub name: String,
 }
+
+impl UserDetails for Model {}

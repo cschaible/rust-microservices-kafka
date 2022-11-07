@@ -11,6 +11,7 @@ anyhow = "1.0"
 apache-avro = { version = "0.14.0", optional = true }
 async-graphql = { version = "4.0.12", features = ["dataloader", "opentelemetry", "tracing", "uuid"], optional = true }
 axum = "0.5.0"
+common-security = { path = "../common-security", optional = true }
 config = "0.13.2"
 mongodb = { version = "2.3.0", optional = true }
 rdkafka = { version = "0.28.0", optional = true }
@@ -26,4 +27,5 @@ grapqhl = ["dep:async-graphql"]
 kafka = ["dep:apache-avro", "dep:rdkafka", "dep:schema_registry_converter"]
 mongodb = ["dep:mongodb"]
 relationaldb = ["dep:sea-orm", "dep:sea-orm-migration"]
+security = ["dep:common-security"]
 scheduler = ["dep:tokio-cron-scheduler"]

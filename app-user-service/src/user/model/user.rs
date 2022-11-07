@@ -1,3 +1,4 @@
+use common_security::authentication::UserDetails;
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
@@ -27,3 +28,5 @@ impl Related<super::phone_number::Entity> for Entity {
         Relation::PhoneNumber.def()
     }
 }
+
+impl UserDetails for Model {}

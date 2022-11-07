@@ -4,6 +4,7 @@ use async_graphql::Object;
 use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
+use common_security::authentication::DynAuthenticationHolder;
 use kafka_schema_accommodation::schema_create_room_type::SCHEMA_NAME_CREATE_ROOM_TYPE;
 use kafka_schema_accommodation::schema_delete_room_type::SCHEMA_NAME_DELETE_ROOM_TYPE;
 use kafka_schema_accommodation::schema_update_room_type::SCHEMA_NAME_UPDATE_ROOM_TYPE;
@@ -30,7 +31,14 @@ impl RoomTypeInput {
         ctx: &Context<'_>,
         input: CreateRoomTypeInput,
     ) -> Result<RoomTypePayload, AppError> {
+        // Check authentication
+        ctx.data_unchecked::<DynAuthenticationHolder>()
+            .user_authenticated()?;
+
+        // Get context
         let context = ctx.data_unchecked::<DynContext>();
+
+        // Start transaction and execute query
         let saved_room_type = transactional(context.db_client(), |db_session| {
             let event_dispatcher = context.event_dispatcher();
             let room_type: RoomType = input.clone().into();
@@ -60,7 +68,14 @@ impl RoomTypeInput {
         ctx: &Context<'_>,
         input: UpdateRoomTypeInput,
     ) -> Result<RoomTypePayload, AppError> {
+        // Check authentication
+        ctx.data_unchecked::<DynAuthenticationHolder>()
+            .user_authenticated()?;
+
+        // Get context
         let context = ctx.data_unchecked::<DynContext>();
+
+        // Start transaction and execute query
         let updated_room_type = transactional(context.db_client(), |db_session| {
             let event_dispatcher = context.event_dispatcher();
             let update = input.clone();
@@ -111,7 +126,14 @@ impl RoomTypeInput {
         ctx: &Context<'_>,
         room_type_id: Uuid,
     ) -> Result<bool, AppError> {
+        // Check authentication
+        ctx.data_unchecked::<DynAuthenticationHolder>()
+            .user_authenticated()?;
+
+        // Get context
         let context = ctx.data_unchecked::<DynContext>();
+
+        // Start transaction and execute query
         let deleted_room = transactional(context.db_client(), |db_session| {
             let event_dispatcher = context.event_dispatcher();
 

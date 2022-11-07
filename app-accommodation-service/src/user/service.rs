@@ -1,5 +1,8 @@
+use bson::doc;
+use bson::Document;
 use common_db_mongodb::util::get_collection;
 use common_error::AppError;
+use mongodb::options::FindOneOptions;
 use mongodb::options::InsertOneOptions;
 use mongodb::ClientSession;
 use mongodb::Collection;
@@ -28,4 +31,26 @@ pub async fn create_user(
         .await?;
 
     Ok(())
+}
+
+#[instrument(name = "find_user", skip_all)]
+pub async fn find_one_by_identifier(
+    db_session: &ClientSession,
+    identifier: Uuid,
+) -> Result<Option<Model>, AppError> {
+    let collection: Collection<Model> = get_collection::<Model>(db_session, "user");
+
+    Ok(collection
+        .find_one(id_filter(identifier), FindOneOptions::default())
+        .await?)
+}
+
+fn id_filter(id: Uuid) -> Document {
+    doc! {
+        "identifier": as_bson_uuid(id)
+    }
+}
+
+fn as_bson_uuid(id: Uuid) -> bson::Uuid {
+    id.into()
 }

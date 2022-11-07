@@ -18,9 +18,10 @@ axum-tracing-opentelemetry = { version = "0.5.0", features = ["jaeger"] }
 bson = { version = "2.4.0", features = ["uuid-1", "serde_with"] }
 chrono = "0.4.19"
 common-db-mongodb = { path = "../common-db-mongodb" }
-common-error = { path = "../common-error", features = ["grapqhl", "mongodb", "kafka"] }
+common-error = { path = "../common-error", features = ["grapqhl", "kafka", "mongodb", "security"] }
 common-kafka = { path = "../common-kafka" }
 common-metrics = { path = "../common-metrics" }
+common-security = { path = "../common-security" }
 common-tracing = { path = "../common-tracing" }
 config = "0.13.2"
 futures = "0.3.21"
