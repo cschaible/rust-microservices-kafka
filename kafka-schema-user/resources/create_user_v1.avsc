@@ -1,0 +1,61 @@
+{
+  "name": "CreateUserAvroV1",
+  "type": "record",
+  "fields": [
+    {
+      "name": "identifier",
+      "type": "string"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "email",
+      "type": "string"
+    },
+    {
+      "name": "country",
+      "type": {
+        "name": "IsoCountryCodeEnumAvro",
+        "symbols": [
+          "DE",
+          "US"
+        ],
+        "type": "enum"
+      }
+    },
+    {
+      "name": "phoneNumbers",
+      "type": {
+        "type": "array",
+        "items": {
+          "name": "phoneNumber",
+          "type": "record",
+          "fields": [
+            {
+              "name": "countryCode",
+              "type": "string"
+            },
+            {
+              "name": "phoneNumberType",
+              "type": {
+                "name": "PhoneNumberTypeEnumAvro",
+                "symbols": [
+                  "Business",
+                  "Home",
+                  "Mobile"
+                ],
+                "type": "enum"
+              }
+            },
+            {
+              "name": "callNumber",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

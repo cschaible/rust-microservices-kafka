@@ -1,0 +1,14 @@
+{
+  "name": "DeleteRoomTypeAvroV1",
+  "type": "record",
+  "fields": [
+    {
+      "name": "accommodationId",
+      "type": "string"
+    },
+    {
+      "name": "identifier",
+      "type": "string"
+    }
+  ]
+}
