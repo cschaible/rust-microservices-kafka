@@ -5,8 +5,17 @@ health-check:
   listen: 127.0.0.1:4001
   enabled: true
 
+headers:
+  all: # Header rules for all subgraphs
+    request:
+      - propagate:
+          matching: .*
+
 homepage:
   enabled: false
+
+include_subgraph_errors:
+  all: true
 
 sandbox:
   enabled: true
