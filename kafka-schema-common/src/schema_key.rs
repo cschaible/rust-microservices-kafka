@@ -5,39 +5,7 @@ use crate::IdentifierAvro;
 
 pub const SCHEMA_NAME_KEY: &str = "KeyAvro";
 
-pub const RAW_SCHEMA_KEY: &str = r#"
-    {
-        "name": "KeyAvro",
-        "type": "record",
-        "fields": [
-            {
-                "name": "contextIdentifier",
-                "type": "string"
-            },
-            {
-                "name": "identifier",
-                "type": {
-                    "name": "IdentifierAvro",
-                    "type": "record",
-                    "fields": [
-                        {
-                            "name": "identifier",
-                            "type": "string"
-                        },
-                        {
-                            "name": "version",
-                            "type": "long"
-                        },
-                        {
-                            "name": "dataType",
-                            "type": "string"
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-"#;
+pub const RAW_SCHEMA_KEY: &str = include_str!("../resources/key.avsc");
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

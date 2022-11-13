@@ -5,52 +5,8 @@ use crate::BedTypeAvro;
 
 pub const SCHEMA_NAME_CREATE_ROOM_TYPE: &str = "CreateRoomTypeAvroV1";
 
-pub const RAW_SCHEMA_CREATE_ROOM_TPE_V1: &str = r#"
-    {
-        "name": "CreateRoomTypeAvroV1",
-        "type": "record",
-        "fields": [
-            {
-                "name": "accommodationId",
-                "type": "string"
-            },
-            {
-                "name": "identifier",
-                "type": "string"
-            },
-            {
-                "name": "size",
-                "type": "int"
-            },
-            {
-                "name": "balcony",
-                "type": "boolean"
-            },
-            {
-                "name": "bedType",
-                "type": {
-                            "name": "BedTypeEnumAvro",
-                            "symbols": [
-                                "SINGLE",
-                                "TWIN_SINGLE",
-                                "DOUBLE",
-                                "KING"
-                            ],
-                            "type": "enum"
-                        }
-                
-            },
-            {
-                "name": "tv",
-                "type": "boolean"
-            },
-            {
-                "name": "wifi",
-                "type": "boolean"
-            }
-        ]
-    }
-"#;
+pub const RAW_SCHEMA_CREATE_ROOM_TPE_V1: &str =
+    include_str!("../resources/room_type/create_room_type_v1.avsc");
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,0 +1,43 @@
+{
+  "name": "CreateRoomTypeAvroV1",
+  "type": "record",
+  "fields": [
+    {
+      "name": "accommodationId",
+      "type": "string"
+    },
+    {
+      "name": "identifier",
+      "type": "string"
+    },
+    {
+      "name": "size",
+      "type": "int"
+    },
+    {
+      "name": "balcony",
+      "type": "boolean"
+    },
+    {
+      "name": "bedType",
+      "type": {
+        "name": "BedTypeEnumAvro",
+        "symbols": [
+          "SINGLE",
+          "TWIN_SINGLE",
+          "DOUBLE",
+          "KING"
+        ],
+        "type": "enum"
+      }
+    },
+    {
+      "name": "tv",
+      "type": "boolean"
+    },
+    {
+      "name": "wifi",
+      "type": "boolean"
+    }
+  ]
+}
