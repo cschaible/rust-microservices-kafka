@@ -35,10 +35,10 @@ impl From<CountryCode> for IsoCountryCodeEnum {
 pub enum PhoneNumberType {
     /// Business number
     Business,
-    
+
     /// Home number
     Home,
-    
+
     /// Mobile number
     Mobile,
 }
