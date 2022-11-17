@@ -42,7 +42,7 @@ pub async fn create_user<'a>(
             create_user_resource.clone().into();
         let event_dispatcher = context.event_dispatcher();
 
-        Box::pin(async move {
+        async move {
             user.identifier = ActiveValue::set(user_identifier);
             let user = user_service::create_user(db_connection, &user).await?;
 
@@ -79,7 +79,8 @@ pub async fn create_user<'a>(
             .await?;
 
             Ok(build_user_resource(db_connection, user).await?.into())
-        })
+        }
+        .boxed()
     })
     .await
 }
@@ -95,7 +96,7 @@ pub async fn find_one_by_identifier(
 ) -> Result<Json<UserResource>, AppError> {
     authentication.user_authenticated()?;
     transactional(context.db_connection(), |db_connection| {
-        Box::pin(async move {
+        async move {
             match user_service::find_one_by_identifier(db_connection, identifier).await {
                 Ok(found_user) => match found_user {
                     Some(user) => Ok(build_user_resource(db_connection, user).await?.into()),
@@ -103,7 +104,8 @@ pub async fn find_one_by_identifier(
                 },
                 Err(e) => Err(e.into()),
             }
-        })
+        }
+        .boxed()
     })
     .await
 }
@@ -118,7 +120,7 @@ pub async fn find_all(
     transactional(context.db_connection(), |db_connection| {
         let params = page_params.clone();
 
-        Box::pin(async move {
+        async move {
             if let (Some(_page), Some(_page_size)) = (params.page, params.page_size) {
                 match user_service::find_all_paged(db_connection, params).await {
                     Ok(users) => Ok(build_user_resource_page_from_page(db_connection, users)
@@ -137,7 +139,8 @@ pub async fn find_all(
                     Err(e) => Err(e.into()),
                 }
             }
-        })
+        }
+        .boxed()
     })
     .await
 }

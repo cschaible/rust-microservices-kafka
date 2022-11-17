@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
+use futures::FutureExt;
 use mongodb::Client;
 use opentelemetry_propagator_b3::propagator::Propagator;
 use rdkafka::producer::FutureProducer;
@@ -39,7 +40,7 @@ async fn find_send_delete(
         let producer = producer.clone();
         let tracing_propagator = tracing_propagator.clone();
 
-        Box::pin(async move {
+        async move {
             let event_list = event_service::find_next_page(db_session).await;
 
             match event_list {
@@ -68,7 +69,8 @@ async fn find_send_delete(
                     Ok(false)
                 }
             }
-        })
+        }
+        .boxed()
     })
     .await
 }

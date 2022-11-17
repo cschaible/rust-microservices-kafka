@@ -2,6 +2,7 @@ use async_graphql::Context;
 use async_graphql::Object;
 use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
+use futures_util::FutureExt;
 
 use crate::accommodation::api::query::types::accommodation::AccommodationPayload;
 use crate::accommodation::api::shared::types::CountryCode;
@@ -25,7 +26,7 @@ impl AccommodationResolver {
         let accommodations = transactional(context.db_client(), |db_session| {
             let name_filter = name.clone();
             let country_filter = country;
-            Box::pin(async move {
+            async move {
                 let accommodations = find_accommodations(db_session, name_filter, country_filter)
                     .await?
                     .into_iter()
@@ -33,7 +34,8 @@ impl AccommodationResolver {
                     .collect();
 
                 Ok(accommodations)
-            })
+            }
+            .boxed()
         })
         .await?;
 

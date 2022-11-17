@@ -4,6 +4,7 @@ use std::sync::Arc;
 use apache_avro::schema::Name;
 use common_db_mongodb::transaction::transactional;
 use common_tracing::get_context_from_b3;
+use futures_util::FutureExt;
 use kafka_schema_common::schema_key::KeyAvro;
 use kafka_schema_user::schema_create_user::CreateUserAvro;
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
@@ -111,14 +112,15 @@ pub async fn do_listen(
                         let version: i64 = key.identifier.version;
                         let name: String = payload.name.clone();
 
-                        Box::pin(async move {
+                        async move {
                             match user::service::create_user(db_session, identifier, version, name)
                                 .await
                             {
                                 Ok(_) => Ok(()),
                                 Err(e) => Err(e),
                             }
-                        })
+                        }
+                        .boxed()
                     })
                     .instrument(span.clone())
                     .await

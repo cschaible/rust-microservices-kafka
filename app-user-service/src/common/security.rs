@@ -18,6 +18,7 @@ use common_security::jwt::token::TokenDecoder;
 use common_security::jwt::token::TokenDecoders;
 use common_security::jwt::Claims;
 use common_security::load_jwk_decoders;
+use futures::FutureExt;
 use uuid::Uuid;
 
 use crate::common::context::DynContext;
@@ -82,7 +83,7 @@ impl UserDetailsServiceImpl {
 impl UserDetailsService for UserDetailsServiceImpl {
     async fn load_user(&self, identifier: Uuid) -> Option<Box<dyn UserDetails>> {
         let user = transactional(self.context.db_connection(), |tx| {
-            Box::pin(async move { Ok(find_one_by_identifier(tx, identifier).await?) })
+            async move { Ok(find_one_by_identifier(tx, identifier).await?) }.boxed()
         })
         .await;
 

@@ -5,6 +5,7 @@ use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
 use common_security::authentication::DynAuthenticationHolder;
+use futures_util::FutureExt;
 use kafka_schema_accommodation::schema_create_accommodation::SCHEMA_NAME_CREATE_ACCOMMODATION;
 use kafka_schema_accommodation::schema_update_accommodation::SCHEMA_NAME_UPDATE_ACCOMMODATION;
 use query::types::accommodation::AccommodationPayload;
@@ -50,7 +51,7 @@ impl AccommodationInput {
             let event_dispatcher = context.event_dispatcher();
             let accommodation: Accommodation = input.clone().into();
 
-            Box::pin(async move {
+            async move {
                 // Save entity to database
                 create_accommodation(db_session, accommodation.clone()).await?;
 
@@ -63,7 +64,8 @@ impl AccommodationInput {
                 )
                 .await?;
                 Ok(accommodation)
-            })
+            }
+            .boxed()
         })
         .await?;
 
@@ -88,7 +90,7 @@ impl AccommodationInput {
             let event_dispatcher = context.event_dispatcher();
             let update = input.clone();
 
-            Box::pin(async move {
+            async move {
                 let accommodation = find_accommodation(db_session, input.id).await?;
                 if let Some(mut accommodation) = accommodation {
                     // Check version
@@ -121,7 +123,8 @@ impl AccommodationInput {
                 } else {
                     Err(AppError::DbError(DbError::NotFound))
                 }
-            })
+            }
+            .boxed()
         })
         .await?;
 

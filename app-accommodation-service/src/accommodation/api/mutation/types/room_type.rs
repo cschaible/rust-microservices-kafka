@@ -5,6 +5,7 @@ use common_db_mongodb::transaction::transactional;
 use common_error::AppError;
 use common_error::DbError;
 use common_security::authentication::DynAuthenticationHolder;
+use futures_util::FutureExt;
 use kafka_schema_accommodation::schema_create_room_type::SCHEMA_NAME_CREATE_ROOM_TYPE;
 use kafka_schema_accommodation::schema_delete_room_type::SCHEMA_NAME_DELETE_ROOM_TYPE;
 use kafka_schema_accommodation::schema_update_room_type::SCHEMA_NAME_UPDATE_ROOM_TYPE;
@@ -43,7 +44,7 @@ impl RoomTypeInput {
             let event_dispatcher = context.event_dispatcher();
             let room_type: RoomType = input.clone().into();
 
-            Box::pin(async move {
+            async move {
                 // Save entity to database
                 add_room_type(db_session, room_type.clone()).await?;
 
@@ -56,7 +57,8 @@ impl RoomTypeInput {
                 )
                 .await?;
                 Ok(room_type)
-            })
+            }
+            .boxed()
         })
         .await?;
 
@@ -80,7 +82,7 @@ impl RoomTypeInput {
             let event_dispatcher = context.event_dispatcher();
             let update = input.clone();
 
-            Box::pin(async move {
+            async move {
                 let room_type = find_room_type(db_session, update.id).await?;
 
                 if let Some(mut room_type) = room_type {
@@ -114,7 +116,8 @@ impl RoomTypeInput {
                 } else {
                     Err(AppError::DbError(DbError::NotFound))
                 }
-            })
+            }
+            .boxed()
         })
         .await?;
 
@@ -137,7 +140,7 @@ impl RoomTypeInput {
         let deleted_room = transactional(context.db_client(), |db_session| {
             let event_dispatcher = context.event_dispatcher();
 
-            Box::pin(async move {
+            async move {
                 let room_type = find_room_type(db_session, room_type_id).await?;
 
                 if let Some(room_type) = room_type {
@@ -156,7 +159,8 @@ impl RoomTypeInput {
                 } else {
                     Ok(false)
                 }
-            })
+            }
+            .boxed()
         })
         .await?;
 

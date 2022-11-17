@@ -4,6 +4,7 @@ use async_graphql::Object;
 use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
 use common_security::authentication::DynAuthenticationHolder;
+use futures::FutureExt;
 use kafka_schema_user::schema_create_user::SCHEMA_NAME_CREATE_USER;
 use sea_orm::ActiveValue::Set;
 use tracing::instrument;
@@ -45,7 +46,7 @@ impl UserInput {
             let mut user: user::ActiveModel = input.clone().into();
             user.identifier = Set(user_identifier);
 
-            Box::pin(async move {
+            async move {
                 // Save entity to database
                 let user = create_user(db_connection, &user).await?;
 
@@ -63,7 +64,8 @@ impl UserInput {
                 .await?;
 
                 Ok(user)
-            })
+            }
+            .boxed()
         })
         .await?;
 

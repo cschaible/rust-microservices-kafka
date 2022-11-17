@@ -3,6 +3,7 @@ use async_graphql::Object;
 use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
 use common_security::authentication::DynAuthenticationHolder;
+use futures::FutureExt;
 use uuid::Uuid;
 
 use crate::user::api::graphql::query::types::user::UserPayload;
@@ -31,7 +32,7 @@ impl UserResolver {
         // Start transaction and search data
         let users = transactional(context.db_connection(), |db_connection| {
             let user_ids = user_ids.clone();
-            Box::pin(async move {
+            async move {
                 let users = if let Some(ids) = user_ids {
                     user_service::find_all_by_identifiers(db_connection, ids).await?
                 } else {
@@ -39,7 +40,8 @@ impl UserResolver {
                 };
 
                 Ok(users.into_iter().map(UserPayload).collect())
-            })
+            }
+            .boxed()
         })
         .await?;
 

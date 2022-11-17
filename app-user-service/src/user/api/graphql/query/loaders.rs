@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use async_graphql::dataloader::*;
 use common_db_relationaldb::transaction::transactional;
 use common_error::AppError;
+use futures::FutureExt;
 use uuid::Uuid;
 
 use crate::user::model::projections::PhoneNumberUserIdentifierProjection;
@@ -27,11 +28,12 @@ impl Loader<Uuid> for PhoneNumberLoader {
     async fn load(&self, keys: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
         let phone_numbers = transactional(self.context.db_connection(), |db_connection| {
             let k = keys.to_vec();
-            Box::pin(async move {
+            async move {
                 let phone_numbers =
                     phone_number_service::find_all_by_user_identifiers(db_connection, k).await?;
                 Ok(phone_numbers)
-            })
+            }
+            .boxed()
         })
         .await?;
 
