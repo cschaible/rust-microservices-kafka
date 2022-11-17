@@ -89,6 +89,10 @@ The containers can be started/stopped using the convenience scripts:
 - `scripts/docker-comppse-up.sh` and 
 - `scripts/docker-compose-down.sh`.
 
+Hint:  
+It might be necessary to add `127.0.0.1 mongodb1` to your `/etc/hosts` to make the single node
+mongodb replicaset accessible.
+
 The apollo-router for graphql federation can be started using the scripts:
 - `scripts/apollo_router_download.sh` to download the repo (as there are no pre-build binaries for apple silicon)
 - `scripts/apollo_router_build.sh` to build the router
